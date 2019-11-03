@@ -20,7 +20,9 @@ ln -s /home/app/unms/public/firmwares /www/firmwares
 
 # Certs
 [ -e /config/cert ] || mkdir -p /config/cert
+[ -e /config/usercert ] || mkdir -p /config/usercert
 ln -s /config/cert /cert
+ln -s /config/usercert /usercert
 
 # UNMS / UCRM Logs
 [ -e /config/unms/logs ] || mkdir -p /config/unms/logs
