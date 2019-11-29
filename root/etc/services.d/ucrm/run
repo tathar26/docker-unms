@@ -54,6 +54,12 @@ until pg_isready; do
   sleep 1
 done
 
+# wait for unms to create user
+until id -u unms > /dev/null 2>&1; do
+  echo "Waiting for unms to create user..."
+  sleep 1
+done
+
 
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting UCRM in quiet mode..."
