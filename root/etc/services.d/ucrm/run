@@ -55,7 +55,7 @@ until pg_isready; do
 done
 
 # wait for unms to create user
-until id -u unms > /dev/null 2>&1; do
+until id -u unms; do
   echo "Waiting for unms to create user..."
   sleep 1
 done
