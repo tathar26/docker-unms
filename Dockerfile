@@ -92,10 +92,8 @@ RUN grep -lR "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
     && sed -i "1s#^#POSTGRES_HOST=127.0.0.1\n#" /tmp/crontabs/server \
     && sed -i "1s#^#PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n#" /tmp/crontabs/server \
     && sed -i "s#\.0#\.crt#g" /usr/src/ucrm/scripts/update-certificates.sh \
-    && sed -i "s#this->localUrlGenerator->generate('homepage')#ucrmPublicUrl#g" \
-       /usr/src/ucrm/src/AppBundle/Service/Plugin/PluginUcrmConfigGenerator.php \
-    && sed -i "/update-ca-certificates/i cp /config/cert/live.crt /usr/local/share/ca-certificates/ || true" /usr/src/ucrm/scripts/update-certificates.sh \
-    && /usr/src/ucrm/scripts/update-certificates.sh
+    && sed -i "s#http://localhost/%s#http://localhost:9081/%s#g" /usr/src/ucrm/src/AppBundle/Service/LocalUrlGenerator.php \
+    && sed -i "s#'localhost', '127.0.0.1'#'localhost:9081', '127.0.0.1:9081'#g" /usr/src/ucrm/src/AppBundle/Util/Helpers.php
 # end unms-crm dockerfile #
 
 # ubnt/nginx docker file #
@@ -192,8 +190,6 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
     && grep -lR "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
     && grep -lR "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g" \
     && sed -i "s#\\\.\[0-9]{1,3}#[0-9]#g" /refresh-certificate.sh \
-    && echo "cp /config/cert/live.crt /usr/local/share/ca-certificates/ || true" >> /refresh-certificate.sh \
-    && echo "update-ca-certificates" >> /refresh-certificate.sh
 
 # make compatible with debian
 RUN sed -i "s#/bin/sh#/bin/bash#g" /entrypoint.sh \
