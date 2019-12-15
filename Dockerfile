@@ -189,7 +189,7 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
     && sed -i "s#execute('/refresh-certificate.sh#execute('sudo --preserve-env /refresh-certificate.sh#g" /templates/conf.d/nginx-api.conf.template \
     && grep -lR "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
     && grep -lR "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g" \
-    && sed -i "s#\\\.\[0-9]{1,3}#[0-9]#g" /refresh-certificate.sh \
+    && sed -i "s#\\\.\[0-9]{1,3}#[0-9]#g" /refresh-certificate.sh
 
 # make compatible with debian
 RUN sed -i "s#/bin/sh#/bin/bash#g" /entrypoint.sh \
