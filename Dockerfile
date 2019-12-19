@@ -1,8 +1,8 @@
 # Multi-stage build - See https://docs.docker.com/engine/userguide/eng-image/multistage-build
-FROM ubnt/unms:1.1.1 as unms
-FROM ubnt/unms-nginx:1.1.1 as unms-nginx
-FROM ubnt/unms-netflow:1.1.1 as unms-netflow
-FROM ubnt/unms-crm:3.1.1 as unms-crm
+FROM ubnt/unms:1.1.2 as unms
+FROM ubnt/unms-nginx:1.1.2 as unms-nginx
+FROM ubnt/unms-netflow:1.1.2 as unms-netflow
+FROM ubnt/unms-crm:3.1.2 as unms-crm
 FROM oznu/s6-node:10.15.3-debian-amd64
 
 ENV DEBIAN_FRONTEND=noninteractive 
