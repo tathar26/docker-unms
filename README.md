@@ -52,7 +52,6 @@ The parameters are split into two halves, separated by a colon, the left hand si
 The Docker image, nico640/docker-unms, is not maintained by or affiliated with Ubiquiti Networks. You should not expect any support from Ubiquiti when running UNMS using this image.
 
 * In-app upgrades will not work. You can upgrade UNMS by downloading the latest version of this image.
-* Device firmware upgrades initiated from UNMS may not work ([#7](https://github.com/oznu/docker-unms/issues/7)).
 
 ## Docker Compose
 
