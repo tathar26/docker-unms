@@ -172,7 +172,6 @@ RUN set -x \
     && rm -rf /tmp/src \
     && rm -rf /var/cache/apk/* \
     && echo "unms ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s *" >> /etc/sudoers \
-    && echo "unms ALL=(ALL) NOPASSWD:SETENV: /copy-user-certs.sh reload" >> /etc/sudoers \
     && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-certificate.sh *" >> /etc/sudoers \
     && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-configuration.sh *" >> /etc/sudoers
 	
@@ -186,7 +185,6 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
     && sed -i "s#80#9081#g" /etc/nginx/ucrm/ucrm.conf \
     && sed -i "s#81#9082#g" /etc/nginx/ucrm/suspended_service.conf \
     && sed -i '/conf;/a \ \ include /etc/nginx/ucrm/*.conf;' /templates/nginx.conf.template \
-    && sed -i "s#execute('/refresh-certificate.sh#execute('sudo --preserve-env /refresh-certificate.sh#g" /templates/conf.d/nginx-api.conf.template \
     && grep -lR "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
     && grep -lR "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g" \
     && sed -i "s#\\\.\[0-9]{1,3}#[0-9]#g" /refresh-certificate.sh
