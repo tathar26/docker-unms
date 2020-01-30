@@ -1,8 +1,8 @@
 # Multi-stage build - See https://docs.docker.com/engine/userguide/eng-image/multistage-build
-FROM ubnt/unms:1.1.3 as unms
-FROM ubnt/unms-nginx:1.1.3 as unms-nginx
-FROM ubnt/unms-netflow:1.1.3 as unms-netflow
-FROM ubnt/unms-crm:3.1.3 as unms-crm
+FROM ubnt/unms:1.1.4 as unms
+FROM ubnt/unms-nginx:1.1.4 as unms-nginx
+FROM ubnt/unms-netflow:1.1.4 as unms-netflow
+FROM ubnt/unms-crm:3.1.4 as unms-crm
 FROM oznu/s6-node:10.15.3-debian-amd64
 
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -101,7 +101,7 @@ ENV NGINX_UID=1000 \
     NGINX_VERSION=nginx-1.14.2 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.13 \
-    PHP_VERSION=php-7.3.13
+    PHP_VERSION=php-7.3.14
 
 RUN set -x \
     && mkdir -p /tmp/src && cd /tmp/src \
