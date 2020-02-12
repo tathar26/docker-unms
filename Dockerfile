@@ -3,7 +3,7 @@ FROM ubnt/unms:1.1.5 as unms
 FROM ubnt/unms-nginx:1.1.5 as unms-nginx
 FROM ubnt/unms-netflow:1.1.5 as unms-netflow
 FROM ubnt/unms-crm:3.1.5 as unms-crm
-FROM oznu/s6-node:10.15.3-debian-amd64
+FROM nico640/s6-debian-node:10.19.0
 
 ENV DEBIAN_FRONTEND=noninteractive 
 
