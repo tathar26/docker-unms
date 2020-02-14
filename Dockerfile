@@ -72,6 +72,7 @@ COPY --from=unms-crm /tmp/supervisord /tmp/supervisord
 
 RUN grep -lR "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unms/g' \
     && grep -lR "su-exec nginx" /usr/src/ucrm/ | xargs sed -i 's/su-exec nginx//g' \
+    && grep -lR 'su-exec "${unixUser}"' /usr/src/ucrm/ | xargs sed -i 's/su-exec "${unixUser}"//g' \
     && grep -lR "su-exec nginx" /tmp/crontabs/ | xargs sed -i 's/su-exec nginx//g' \
     && grep -lR "su-exec nginx" /tmp/supervisor.d/ | xargs sed -i 's/su-exec nginx//g' \
     && sed -i 's#chmod -R 775 /data/log/var/log#chmod -R 777 /data/log/var/log#g' /usr/src/ucrm/scripts/dirs.sh \
