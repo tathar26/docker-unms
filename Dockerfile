@@ -173,7 +173,7 @@ RUN set -x \
     && rm -rf /tmp/src \
     && rm -rf /var/cache/apk/* \
     && echo "unms ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s *" >> /etc/sudoers \
-    && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-certificate.sh *" >> /etc/sudoers \
+    && echo "unms ALL=(ALL) NOPASSWD: /bin/cat *" >> /etc/sudoers \
     && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-configuration.sh *" >> /etc/sudoers
 	
 COPY --from=unms-crm /etc/nginx/available-servers /etc/nginx/ucrm
