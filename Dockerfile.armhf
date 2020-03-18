@@ -3,7 +3,7 @@ FROM ubnt/unms:1.1.6 as unms
 FROM ubnt/unms-nginx:1.1.6 as unms-nginx
 FROM ubnt/unms-netflow:1.1.6 as unms-netflow
 FROM ubnt/unms-crm:3.1.6 as unms-crm
-FROM nico640/s6-debian-node:testing-armhf
+FROM nico640/s6-debian-node:10.19.0-9.12-armhf
 
 ENV DEBIAN_FRONTEND=noninteractive 
 
