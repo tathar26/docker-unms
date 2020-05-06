@@ -1,6 +1,5 @@
-[![Docker Build Status](https://img.shields.io/docker/cloud/build/nico640/docker-unms?label=x64%20build)](https://hub.docker.com/r/nico640/docker-unms/) 
-[![GitLab](https://img.shields.io/gitlab/pipeline/Nico640/docker-unms?label=arm%20build)](https://gitlab.com/Nico640/docker-unms/-/jobs) 
-[![GitHub release](https://img.shields.io/github/release/nico640/docker-unms/all)](https://github.com/nico640/docker-unms/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/Nico640/docker-unms?style=flat-square))](https://github.com/nico640/docker-unms/releases)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Nico640/docker-unms/Docker%20CI%20Release?style=flat-square)](https://github.com/Nico640/docker-unms/actions?query=workflow%3A%22Docker+CI+Release%22)
 
 # Docker UNMS
 
@@ -20,12 +19,12 @@ docker run \
   nico640/docker-unms:latest
 ```
 
-## Raspberry Pi / ARMv7
+## Raspberry Pi / ARM
 
-This image will also allow you to run [UNMS](https://unms.com/) on a Raspberry Pi or other Docker-enabled ARMv7/8 devices by using the `armhf` tag.
+This image will also allow you to run [UNMS](https://unms.com/) on a Raspberry Pi or other Docker-enabled ARMv7/8 devices.
 
 ```
-docker run -d --name unms -p 80:80 -p 443:443 -p 2055:2055/udp -v </path/to/config>:/config nico640/docker-unms:armhf
+docker run -d --name unms -p 80:80 -p 443:443 -p 2055:2055/udp -v </path/to/config>:/config nico640/docker-unms:latest
 ```
 
 ## Parameters
@@ -59,7 +58,7 @@ The Docker image, nico640/docker-unms, is not maintained by or affiliated with U
 version: '2'
 services:
   unms:
-    image: nico640/docker-unms:latest  # use "armhf" instead of "latest" for arm devices
+    image: nico640/docker-unms:latest
     restart: always
     ports:
       - 80:80
