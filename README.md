@@ -20,7 +20,7 @@ docker run \
   nico640/docker-unms:latest
 ```
 
-## Raspberry Pi / ARMv7
+## Raspberry Pi / ARM
 
 This image will also allow you to run [UNMS](https://unms.com/) on a Raspberry Pi or other Docker-enabled ARMv7/8 devices by using the `armhf` tag.
 
