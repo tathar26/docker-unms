@@ -1,4 +1,4 @@
-[![GitHub Release](https://img.shields.io/github/v/release/Nico640/docker-unms?style=flat-square))](https://github.com/nico640/docker-unms/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/Nico640/docker-unms?style=flat-square)](https://github.com/nico640/docker-unms/releases)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Nico640/docker-unms/Docker%20CI%20Release?style=flat-square)](https://github.com/Nico640/docker-unms/actions?query=workflow%3A%22Docker+CI+Release%22)
 
 # Docker UNMS
