@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       -
         name: Checkout
@@ -15,13 +15,6 @@ jobs:
       -
         name: Login to DockerHub
         run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin      
-      -
-        name: Set up Docker Buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          buildx-version: latest
-          qemu-version: latest
       - 
         name: Build and push Docker image
         run: docker buildx build --platform linux/arm -t nico640/docker-unms:armhf -f Dockerfile --push .
