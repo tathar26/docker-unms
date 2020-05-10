@@ -24,7 +24,7 @@ RUN set -x \
     libcurl4-openssl-dev libxml2-dev libedit-dev libsodium-dev libargon2-dev \
     jq autoconf libgmp-dev libpng-dev libbz2-dev libc-client-dev libkrb5-dev \
     libjpeg-dev libfreetype6-dev libzip-dev unzip supervisor libpcre2-dev \
-    libuv1-dev libyajl-dev uuid-dev \
+    libuv1-dev libyajl-dev uuid-dev glib2.0-dev libexpat1-dev \
   && apt-get install -y certbot -t stretch-backports
 
 # start ubnt/unms dockerfile #
@@ -35,8 +35,19 @@ WORKDIR /home/app/unms
 # Copy UNMS app from offical image since the source code is not published at this time
 COPY --from=unms /home/app/unms /home/app/unms
 
+ENV LIBVIPS_VERSION=8.9.1 \
+    SHARP_VERSION=0.25.2
+	
+RUN set -x \
+    && mkdir -p /tmp/src && cd /tmp/src \
+    && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
+    && tar -zxvf libvips.tar.gz \
+    && cd /tmp/src/vips-${LIBVIPS_VERSION} && ./configure \
+    && make && make install && ldconfig\
+    && rm -rf /tmp/src
+
 RUN rm -rf node_modules \
-    && JOBS=$(nproc) npm install sharp \
+    && JOBS=$(nproc) npm install sharp@${SHARP_VERSION} \
     && JOBS=$(nproc) npm install --production \
     && JOBS=$(nproc) npm install npm
 
