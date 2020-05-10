@@ -36,7 +36,7 @@ WORKDIR /home/app/unms
 COPY --from=unms /home/app/unms /home/app/unms
 
 RUN rm -rf node_modules \
-    && JOBS=$(nproc) npm install sharp@0.21.1 \
+    && JOBS=$(nproc) npm install sharp \
     && JOBS=$(nproc) npm install --production \
     && JOBS=$(nproc) npm install npm
 
