@@ -19,13 +19,13 @@ export UNMS_FLUENTD_HOST=127.0.0.1
 export UNMS_FLUENTD_PORT=8081
 export UNMS_NGINX_HOST=127.0.0.1
 export UNMS_NGINX_PORT=12345
-export UNMS_TOKEN=ucrm
 export UCRM_HOST=127.0.0.1
 export UCRM_PORT=9081
 export UCRM_PG_USER=ucrm
 export UCRM_PG_SCHEMA=ucrm
 export UCRM_PG_PASSWORD=ucrm
 export NODE_ENV=production
+. /etc/sharedenv
 
 # wait for postgres to come up
 until pg_isready; do

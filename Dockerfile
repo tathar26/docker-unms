@@ -48,7 +48,8 @@ RUN set -x \
 
 RUN rm -rf node_modules \
     && JOBS=$(nproc) npm install sharp@${SHARP_VERSION} \
-    && JOBS=$(nproc) npm install --production \
+    && && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines
+    && yarn cache clean  \
     && JOBS=$(nproc) npm install npm
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
