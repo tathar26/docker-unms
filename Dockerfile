@@ -1,8 +1,8 @@
 # Multi-stage build - See https://docs.docker.com/engine/userguide/eng-image/multistage-build
-FROM ubnt/unms:1.1.7 as unms
-FROM ubnt/unms-nginx:1.1.7 as unms-nginx
-FROM ubnt/unms-netflow:1.1.7 as unms-netflow
-FROM ubnt/unms-crm:3.1.7 as unms-crm
+FROM ubnt/unms:1.2.0 as unms
+FROM ubnt/unms-nginx:1.2.0 as unms-nginx
+FROM ubnt/unms-netflow:1.2.0 as unms-netflow
+FROM ubnt/unms-crm:3.2.0 as unms-crm
 FROM nico640/s6-debian-node:10.19.0-9.12
 
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -23,7 +23,8 @@ RUN set -x \
     iproute2 netcat wget libpcre3 libpcre3-dev libssl-dev git pkg-config \
     libcurl4-openssl-dev libxml2-dev libedit-dev libsodium-dev libargon2-dev \
     jq autoconf libgmp-dev libpng-dev libbz2-dev libc-client-dev libkrb5-dev \
-    libjpeg-dev libfreetype6-dev libzip-dev unzip supervisor \
+    libjpeg-dev libfreetype6-dev libzip-dev unzip supervisor libpcre2-dev \
+    libuv1-dev libyajl-dev uuid-dev \
   && apt-get install -y certbot -t stretch-backports
 
 # start ubnt/unms dockerfile #
@@ -226,6 +227,23 @@ RUN echo '' | pecl install apcu ds \
     && composer clear-cache \
     && sed -i 's#nginx#unms#g' /usr/local/etc/php-fpm.d/zz-docker.conf
 # end php & composer
+
+# siridb-server
+ENV LIBCLERI_VERSION=0.11.1 \
+    SIRIDB_VERSION=2.0.34
+	
+RUN set -x \
+    && mkdir -p /tmp/src && cd /tmp/src \
+    && wget -q https://github.com/transceptor-technology/libcleri/archive/${LIBCLERI_VERSION}.tar.gz -O libcleri.tar.gz \
+    && wget -q https://github.com/siridb/siridb-server/archive/${SIRIDB_VERSION}.tar.gz -O siridb-server.tar.gz \
+    && tar -zxvf libcleri.tar.gz \
+    && tar -zxvf siridb-server.tar.gz \
+    && cd /tmp/src/libcleri-${LIBCLERI_VERSION}/Release \
+    && make all && make install \
+    && cd /tmp/src/siridb-server-${SIRIDB_VERSION}/Release \
+    && make clean && make && make install \
+    && rm -rf /tmp/src
+# end siridb-server
 
 ENV PATH=/home/app/unms/node_modules/.bin:$PATH:/usr/lib/postgresql/9.6/bin \
   PGDATA=/config/postgres \
