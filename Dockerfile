@@ -48,7 +48,7 @@ RUN set -x \
 
 RUN rm -rf node_modules \
     && JOBS=$(nproc) npm install sharp@${SHARP_VERSION} \
-    && && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
+    && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
     && yarn cache clean  \
     && JOBS=$(nproc) npm install npm
 
