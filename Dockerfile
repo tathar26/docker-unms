@@ -242,6 +242,7 @@ RUN echo '' | pecl install apcu ds \
 
 # siridb-server
 ENV LIBCLERI_VERSION=0.11.1 \
+    SIRIDB_VERSION=2.0.34
 	
 RUN set -x \
     && mkdir -p /tmp/src && cd /tmp/src \
