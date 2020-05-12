@@ -48,7 +48,7 @@ RUN set -x \
 RUN rm -rf node_modules \
     && sed -i "/postinstall/d" /home/app/unms/package.json \
     && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
-    && yarn add npm \
+    && yarn add npm --production \
     && yarn cache clean
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
