@@ -48,10 +48,12 @@ RUN set -x \
 RUN rm -rf node_modules \
     && sed -i "/postinstall/d" /home/app/unms/package.json \
     && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
+    && yarn add npm \
     && yarn cache clean
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+    && cp -r /home/app/unms/node_modules/npm /home/app/unms/
 # end ubnt/unms dockerfile #
 
 # start unms-netflow dockerfile #
@@ -240,7 +242,6 @@ RUN echo '' | pecl install apcu ds \
 
 # siridb-server
 ENV LIBCLERI_VERSION=0.11.1 \
-    SIRIDB_VERSION=2.0.34
 	
 RUN set -x \
     && mkdir -p /tmp/src && cd /tmp/src \
