@@ -35,26 +35,23 @@ WORKDIR /home/app/unms
 # Copy UNMS app from offical image since the source code is not published at this time
 COPY --from=unms /home/app/unms /home/app/unms
 
-ENV LIBVIPS_VERSION=8.9.1 \
-    SHARP_VERSION=0.25.2
+ENV LIBVIPS_VERSION=8.9.1
 	
 RUN set -x \
     && mkdir -p /tmp/src && cd /tmp/src \
     && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
     && tar -zxvf libvips.tar.gz \
     && cd /tmp/src/vips-${LIBVIPS_VERSION} && ./configure \
-    && make && make install && ldconfig\
+    && make && make install && ldconfig \
     && rm -rf /tmp/src
 
 RUN rm -rf node_modules \
-    && JOBS=$(nproc) npm install sharp@${SHARP_VERSION} \
+    && sed -i "/postinstall/d" /home/app/unms/package.json \
     && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
-    && yarn cache clean  \
-    && JOBS=$(nproc) npm install npm
+    && yarn cache clean
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && cp -r /home/app/unms/node_modules/npm /home/app/unms/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # end ubnt/unms dockerfile #
 
 # start unms-netflow dockerfile #
@@ -64,7 +61,8 @@ COPY --from=unms-netflow /home/app /home/app/netflow
 
 RUN cd /home/app/netflow \
     && rm -rf node_modules \
-    && JOBS=$(nproc) npm install --production
+    && yarn install --production --no-cache --ignore-engines \
+    && yarn cache clean
 # end unms-netflow dockerfile #
 
 # start unms-crm dockerfile #
