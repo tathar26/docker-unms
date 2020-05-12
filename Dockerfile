@@ -52,7 +52,7 @@ RUN rm -rf node_modules \
     && yarn cache clean
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
     && cp -r /home/app/unms/node_modules/npm /home/app/unms/
 # end ubnt/unms dockerfile #
 
