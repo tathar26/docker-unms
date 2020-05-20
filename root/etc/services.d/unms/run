@@ -25,7 +25,7 @@ export UCRM_PG_USER=ucrm
 export UCRM_PG_SCHEMA=ucrm
 export UCRM_PG_PASSWORD=ucrm
 export NODE_ENV=production
-. /etc/sharedenv
+. /sharedenv
 
 # wait for postgres to come up
 until pg_isready; do

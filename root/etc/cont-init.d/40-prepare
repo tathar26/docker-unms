@@ -12,7 +12,7 @@ ln -s /config/siridb /var/lib/siridb
 # UNMS
 [ -e /config/unms ] || mv /home/app/unms/data /config/unms
 [ -d /home/app/unms/data ] && rm -rf /home/app/unms/data
-[ -e /etc/sharedenv ] || echo "export UNMS_TOKEN=$(LC_CTYPE=C tr -dc "a-zA-Z0-9" < /dev/urandom | fold -w 48 | head -n 1 || true)" >> /etc/sharedenv
+[ -f /sharedenv ] || echo "export UNMS_TOKEN=$(LC_CTYPE=C tr -dc "a-zA-Z0-9" < /dev/urandom | fold -w 48 | head -n 1 || true)" > /sharedenv
 ln -s /config/unms /home/app/unms/data
 
 # UCRM
