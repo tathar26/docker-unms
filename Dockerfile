@@ -1,8 +1,8 @@
 # Multi-stage build - See https://docs.docker.com/engine/userguide/eng-image/multistage-build
-FROM ubnt/unms:1.2.0 as unms
-FROM ubnt/unms-nginx:1.2.0 as unms-nginx
-FROM ubnt/unms-netflow:1.2.0 as unms-netflow
-FROM ubnt/unms-crm:3.2.0 as unms-crm
+FROM ubnt/unms:1.2.3 as unms
+FROM ubnt/unms-nginx:1.2.3 as unms-nginx
+FROM ubnt/unms-netflow:1.2.3 as unms-netflow
+FROM ubnt/unms-crm:3.2.3 as unms-crm
 FROM nico640/s6-debian-node:10.19.0-9.12
 
 ENV DEBIAN_FRONTEND=noninteractive 
@@ -115,7 +115,7 @@ ENV NGINX_UID=1000 \
     NGINX_VERSION=nginx-1.14.2 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
-    PHP_VERSION=php-7.3.17
+    PHP_VERSION=php-7.3.18
 
 RUN set -x \
     && mkdir -p /tmp/src && cd /tmp/src \
