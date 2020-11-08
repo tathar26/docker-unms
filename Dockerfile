@@ -1,73 +1,56 @@
-# Multi-stage build - See https://docs.docker.com/engine/userguide/eng-image/multistage-build
-FROM ubnt/unms:1.2.7 as unms
-FROM ubnt/unms-nginx:1.2.7 as unms-nginx
-FROM ubnt/unms-netflow:1.2.7 as unms-netflow
-FROM ubnt/unms-crm:3.2.7 as unms-crm
-FROM nico640/s6-debian-node:10.19.0-9.13
+FROM ubnt/unms:1.3.0-beta.4 as unms
+FROM ubnt/unms-nginx:1.3.0-beta.4 as unms-nginx
+FROM ubnt/unms-netflow:1.3.0-beta.4 as unms-netflow
+FROM ubnt/unms-crm:3.3.0-beta.4 as unms-crm
+FROM ubnt/unms-siridb:1.3.0-beta.4 as unms-siridb
+FROM rabbitmq:3.7.14-alpine as rabbitmq
 
-ENV DEBIAN_FRONTEND=noninteractive 
+FROM nico640/s6-alpine-node:testing
 
-# base deps redis, rabbitmq, postgres 9.6
+# base deps postgres 9.6, redis, certbot
 RUN set -x \
-  && echo "deb http://ftp.debian.org/debian stretch-backports main" >> /etc/apt/sources.list \
-  && apt-get update \
-  && apt-get -y install apt-transport-https lsb-release ca-certificates wget \
-  && wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg \
-  && sh -c 'echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list' \
-  && apt-get update \
-  && mkdir -p /usr/share/man/man1 /usr/share/man/man7 \
-  && mkdir -p /usr/share/man/man7 \
-  && apt-get install -y build-essential rabbitmq-server redis-server \
-    postgresql-9.6 postgresql-contrib-9.6 postgresql-client-9.6 libpq-dev \
-    gzip bash vim openssl libcap-dev dumb-init sudo gettext zlibc zlib1g zlib1g-dev \
-    iproute2 netcat wget libpcre3 libpcre3-dev libssl-dev git pkg-config \
-    libcurl4-openssl-dev libxml2-dev libedit-dev libsodium-dev libargon2-dev \
-    jq autoconf libgmp-dev libpng-dev libbz2-dev libc-client-dev libkrb5-dev \
-    libjpeg-dev libfreetype6-dev libzip-dev unzip supervisor libpcre2-dev \
-    libuv1-dev libyajl-dev uuid-dev glib2.0-dev libexpat1-dev \
-  && apt-get install -y certbot -t stretch-backports
+    && echo "amd64" > /etc/apk/arch \
+    && apk update --no-cache \
+    && apk add --root / --arch ${APK_ARCH} --no-cache postgresql=9.6.13-r0 postgresql-client=9.6.13-r0 \
+       postgresql-contrib=9.6.13-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
+    && apk add --no-cache redis certbot gzip bash vim dumb-init openssl libcap sudo \
+       pcre pcre2 yajl gettext coreutils make argon2-libs erlang jq vips tar xz \
+       libzip gmp icu c-client supervisor libuv su-exec
 
-# start ubnt/unms dockerfile #
-RUN mkdir -p /home/app/unms
-
+# start unms #
 WORKDIR /home/app/unms
 
 # Copy UNMS app from offical image since the source code is not published at this time
 COPY --from=unms /home/app/unms /home/app/unms
 
-ENV LIBVIPS_VERSION=8.9.1
-	
-RUN set -x \
-    && mkdir -p /tmp/src && cd /tmp/src \
-    && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
-    && tar -zxvf libvips.tar.gz \
-    && cd /tmp/src/vips-${LIBVIPS_VERSION} && ./configure \
-    && make && make install && ldconfig \
-    && rm -rf /tmp/src
-
 RUN rm -rf node_modules \
+    && apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && sed -i "/postinstall/d" /home/app/unms/package.json \
-    && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines \
-    && yarn add npm --production \
-    && yarn cache clean
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && CHILD_CONCURRENCY=1 yarn install --frozen-lockfile --production --no-cache --ignore-engines --network-timeout 100000 \
+    && yarn cache clean \
+    && apk del .build-deps \
+    && rm -rf /var/cache/apk/*     
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
-    && cp -r /home/app/unms/node_modules/npm /home/app/unms/
-# end ubnt/unms dockerfile #
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+# end unms #
 
-# start unms-netflow dockerfile #
-RUN mkdir -p /home/app/netflow
+# start unms-netflow #
+WORKDIR /home/app/netflow
 
 COPY --from=unms-netflow /home/app /home/app/netflow
 
-RUN cd /home/app/netflow \
-    && rm -rf node_modules \
-    && yarn install --production --no-cache --ignore-engines \
-    && yarn cache clean
-# end unms-netflow dockerfile #
+RUN rm -rf node_modules \
+    && apk add --no-cache --virtual .build-deps python3 g++ \
+    && yarn install --frozen-lockfile --production --no-cache --ignore-engines \
+    && yarn cache clean \
+    && apk del .build-deps \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf .node-gyp
+# end unms-netflow #
 
-# start unms-crm dockerfile #
+# start unms-crm #
 RUN mkdir -p /usr/src/ucrm \
     && mkdir -p /tmp/crontabs \
     && mkdir -p /usr/local/etc/php/conf.d \
@@ -83,54 +66,41 @@ COPY --from=unms-crm /tmp/crontabs/server /tmp/crontabs/server
 COPY --from=unms-crm /tmp/supervisor.d /tmp/supervisor.d
 COPY --from=unms-crm /tmp/supervisord /tmp/supervisord
 
-RUN grep -lR "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unms/g' \
-    && grep -lR "su-exec nginx" /usr/src/ucrm/ | xargs sed -i 's/su-exec nginx//g' \
-    && grep -lR 'su-exec "${unixUser}"' /usr/src/ucrm/ | xargs sed -i 's/su-exec "${unixUser}"//g' \
-    && grep -lR "su-exec nginx" /tmp/crontabs/ | xargs sed -i 's/su-exec nginx//g' \
-    && grep -lR "su-exec nginx" /tmp/supervisor.d/ | xargs sed -i 's/su-exec nginx//g' \
+RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unms/g' \
+    && grep -lr "su-exec nginx" /usr/src/ucrm/ | xargs sed -i 's/su-exec nginx/su-exec unms/g' \
+    && grep -lr "su-exec nginx" /tmp/ | xargs sed -i 's/su-exec nginx/su-exec unms/g' \
+    && sed -i "s#unixUser='nginx'#unixUser='unms'#g" /usr/src/ucrm/scripts/unms_ready.sh \
     && sed -i 's#chmod -R 775 /data/log/var/log#chmod -R 777 /data/log/var/log#g' /usr/src/ucrm/scripts/dirs.sh \
-    && sed -i 's#chown -R unms:unms /data/log/var/log#chown root:root /data/log/var/log#g' /usr/src/ucrm/scripts/dirs.sh \
     && sed -i 's#rm -rf /var/log#mv /var/log /data/log/var#g' /usr/src/ucrm/scripts/dirs.sh \
     && sed -i 's#LC_CTYPE=C tr -dc "a-zA-Z0-9" < /dev/urandom | fold -w 48 | head -n 1 || true#head /dev/urandom | tr -dc A-Za-z0-9 | head -c 48#g' \
        /usr/src/ucrm/scripts/parameters.sh \
-    && sed -i 's#-regex \x27.*Version\[0-9]\\{14\\}#-regextype posix-extended -regex \x27.*Version\[0-9]\{14}#g' \
-       /usr/src/ucrm/scripts/database_migrations_ready.sh \
     && sed -i '/\[program:nginx]/,+10d' /tmp/supervisor.d/server.ini \
-    && sed -i '/\[program:cron]/,+10d' /tmp/supervisor.d/server.ini \
-    && sed -i "s#php-fpm --nodaemonize --force-stderr#bash -c 'exec php-fpm --nodaemonize --force-stderr'#g" /tmp/supervisor.d/server.ini \
-    && sed -i "1s#^#POSTGRES_SCHEMA=ucrm\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#POSTGRES_DB=unms\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#POSTGRES_PASSWORD=ucrm\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#POSTGRES_USER=ucrm\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#POSTGRES_PORT=5432\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#POSTGRES_HOST=127.0.0.1\n#" /tmp/crontabs/server \
-    && sed -i "1s#^#PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n#" /tmp/crontabs/server \
-    && sed -i "s#\.0#\.crt#g" /usr/src/ucrm/scripts/update-certificates.sh \
     && sed -i "s#http://localhost/%s#http://localhost:9081/%s#g" /usr/src/ucrm/src/AppBundle/Service/LocalUrlGenerator.php \
     && sed -i "s#'localhost', '127.0.0.1'#'localhost:9081', '127.0.0.1:9081'#g" /usr/src/ucrm/src/AppBundle/Util/Helpers.php
-# end unms-crm dockerfile #
+# end unms-crm #
 
-# ubnt/nginx docker file #
+# start nginx / php #
 ENV NGINX_UID=1000 \
     NGINX_VERSION=nginx-1.14.2 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
-    PHP_VERSION=php-7.3.22
+    NGINX_DEVEL_KIT_VERSION=0.3.1 \
+    PHP_VERSION=php-7.3.24
+
+WORKDIR /tmp/src
 
 RUN set -x \
-    && mkdir -p /tmp/src && cd /tmp/src \
-    && wget -q http://nginx.org/download/${NGINX_VERSION}.tar.gz -O nginx.tar.gz \
-    && wget -q https://github.com/openresty/lua-nginx-module/archive/v${LUA_NGINX_VERSION}.tar.gz -O lua-nginx-module.tar.gz \
-    && wget -q https://github.com/simpl/ngx_devel_kit/archive/v0.3.0.tar.gz -O ndk.tar.gz \
-    && wget -q http://luajit.org/download/LuaJIT-${LUAJIT_VERSION}.tar.gz -O luajit.tar.gz \
-	&& wget -q https://www.php.net/get/${PHP_VERSION}.tar.xz/from/this/mirror -O php.tar.xz \
-    && tar -zxvf lua-nginx-module.tar.gz \
-    && tar -zxvf ndk.tar.gz \
-    && tar -zxvf luajit.tar.gz \
-    && tar -zxvf nginx.tar.gz \
-	&& tar -xvf php.tar.xz \
-	&& cp php.tar.xz /usr/src \
-    && cd /tmp/src/LuaJIT-${LUAJIT_VERSION} && make amalg PREFIX='/usr' && make install PREFIX='/usr' \
+    && apk add --no-cache --virtual .build-deps openssl-dev pcre-dev zlib-dev build-base libffi-dev python3-dev \
+       argon2-dev coreutils curl-dev libedit-dev libsodium-dev libxml2-dev openssl-dev sqlite-dev autoconf dpkg-dev \
+       dpkg   file   g++   gcc   libc-dev   make   pkgconf   re2c \
+    && curl -SL http://nginx.org/download/${NGINX_VERSION}.tar.gz | tar xvz \
+    && curl -SL https://github.com/openresty/lua-nginx-module/archive/v${LUA_NGINX_VERSION}.tar.gz | tar xvz \
+    && curl -SL https://github.com/simpl/ngx_devel_kit/archive/v${NGINX_DEVEL_KIT_VERSION}.tar.gz | tar xvz \
+    && curl -SL http://luajit.org/download/LuaJIT-${LUAJIT_VERSION}.tar.gz | tar xvz \
+    && curl -SL https://www.php.net/get/${PHP_VERSION}.tar.xz/from/this/mirror -o php.tar.xz \
+    && tar -xvf php.tar.xz \
+    && cp php.tar.xz /usr/src \
+    && cd /tmp/src/LuaJIT-${LUAJIT_VERSION} && make amalg PREFIX='/usr' -j $(nproc) && make install PREFIX='/usr' \
     && export LUAJIT_LIB=/usr/lib/libluajit-5.1.so && export LUAJIT_INC=/usr/include/luajit-2.1 \
     && cd /tmp/src/${NGINX_VERSION} && ./configure \
         --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2' \
@@ -138,7 +108,7 @@ RUN set -x \
         --with-pcre-jit \
         --with-threads \
         --add-module=/tmp/src/lua-nginx-module-${LUA_NGINX_VERSION} \
-        --add-module=/tmp/src/ngx_devel_kit-0.3.0 \
+        --add-module=/tmp/src/ngx_devel_kit-${NGINX_DEVEL_KIT_VERSION} \
         --with-http_ssl_module \
         --with-http_realip_module \
         --with-http_gzip_static_module \
@@ -182,13 +152,14 @@ RUN set -x \
         --disable-cgi \
     && make -j $(nproc) \
     && make install \
-    && rm /usr/bin/luajit-${LUAJIT_VERSION} \
+    && apk del .build-deps \
+    && rm "/usr/bin/luajit-${LUAJIT_VERSION}" \
     && rm -rf /tmp/src \
     && rm -rf /var/cache/apk/* \
     && echo "unms ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s *" >> /etc/sudoers \
     && echo "unms ALL=(ALL) NOPASSWD: /bin/cat *" >> /etc/sudoers \
     && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-configuration.sh *" >> /etc/sudoers
-	
+
 COPY --from=unms-crm /etc/nginx/available-servers /etc/nginx/ucrm
 
 COPY --from=unms-nginx /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /openssl.cnf /ip-whitelist.sh /
@@ -199,24 +170,27 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
     && sed -i "s#80#9081#g" /etc/nginx/ucrm/ucrm.conf \
     && sed -i "s#81#9082#g" /etc/nginx/ucrm/suspended_service.conf \
     && sed -i '/conf;/a \ \ include /etc/nginx/ucrm/*.conf;' /templates/nginx.conf.template \
-    && grep -lR "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
-    && grep -lR "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g" \
-    && sed -i "s#\\\.\[0-9]{1,3}#[0-9]#g" /refresh-certificate.sh
+    && grep -lr "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
+    && grep -lr "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g"
+# end nginx / php #
 
-# make compatible with debian
-RUN sed -i "s#/bin/sh#/bin/bash#g" /entrypoint.sh \
-    && sed -i "s#adduser -D#adduser --disabled-password --gecos \"\"#g" /entrypoint.sh
-# end ubnt/nginx docker file #
-
-# php & composer
+# start php plugins / composer #
 ENV PHP_INI_DIR=/usr/local/etc/php \
     SYMFONY_ENV=prod
-	
+
 COPY --from=unms-crm /usr/local/etc/php/php.ini /usr/local/etc/php/
 COPY --from=unms-crm /usr/local/etc/php-fpm.conf /usr/local/etc/
 COPY --from=unms-crm /usr/local/etc/php-fpm.d /usr/local/etc/php-fpm.d
 
-RUN echo '' | pecl install apcu ds \
+RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
+    bzip2-dev freetype-dev imap-dev libjpeg-turbo-dev libpng-dev libwebp-dev libzip-dev gmp-dev icu-dev \
+    libxml2-dev curl-dev krb5-dev \
+    && apk add --root / --arch ${APK_ARCH} --no-cache --virtual .postgres-dev postgresql-dev=9.6.13-r0 \
+	   --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
+    && docker-php-source extract \
+    && cd /usr/src/php \
+    && pecl channel-update pecl.php.net \
+    && echo '' | pecl install apcu ds \
     && docker-php-ext-enable apcu ds \
     && docker-php-ext-configure gd \
         --with-gd \
@@ -226,47 +200,61 @@ RUN echo '' | pecl install apcu ds \
     && docker-php-ext-configure curl \
     && docker-php-ext-configure imap \
         --with-imap-ssl \
-        --with-kerberos \
     && docker-php-ext-install -j2 pdo_pgsql gmp zip bcmath gd bz2 curl \
       exif intl dom xml opcache imap soap sockets sysvmsg sysvshm sysvsem \
     && curl -sS https://getcomposer.org/installer | php -- \
-        --install-dir=/usr/bin --filename=composer \
-	&& cd /usr/src/ucrm \
-    && composer global require hirak/prestissimo \
+        --install-dir=/usr/bin --filename=composer --1 \
+    && cd /usr/src/ucrm \
     && composer install \
         --classmap-authoritative \
         --no-dev --no-interaction \
+    && app/console assets:install --symlink web \
     && composer clear-cache \
+    && rm /usr/bin/composer \
+    && docker-php-source delete \
+    && apk del .build-deps \
+    && apk del .postgres-dev \
+    && rm -rf /var/cache/apk/* \
     && sed -i 's#nginx#unms#g' /usr/local/etc/php-fpm.d/zz-docker.conf
-# end php & composer
+# end php plugins / composer #
 
-# siridb-server
-ENV LIBCLERI_VERSION=0.11.1 \
-    SIRIDB_VERSION=2.0.34
-	
+# start siridb #
+COPY --from=unms-siridb /etc/siridb/siridb.conf /etc/siridb/siridb.conf
+
+ENV LIBCLERI_VERSION=0.12.1 \
+    SIRIDB_VERSION=2.0.40
+
 RUN set -x \
+    && apk add --no-cache --virtual .build-deps gcc make libuv-dev musl-dev pcre2-dev yajl-dev util-linux-dev \
     && mkdir -p /tmp/src && cd /tmp/src \
-    && wget -q https://github.com/transceptor-technology/libcleri/archive/${LIBCLERI_VERSION}.tar.gz -O libcleri.tar.gz \
-    && wget -q https://github.com/siridb/siridb-server/archive/${SIRIDB_VERSION}.tar.gz -O siridb-server.tar.gz \
-    && tar -zxvf libcleri.tar.gz \
-    && tar -zxvf siridb-server.tar.gz \
+    && curl -SL https://github.com/transceptor-technology/libcleri/archive/${LIBCLERI_VERSION}.tar.gz | tar xvz \
+    && curl -SL https://github.com/siridb/siridb-server/archive/${SIRIDB_VERSION}.tar.gz | tar xvz \
     && cd /tmp/src/libcleri-${LIBCLERI_VERSION}/Release \
-    && make all && make install \
+    && make all -j $(nproc) && make install \
     && cd /tmp/src/siridb-server-${SIRIDB_VERSION}/Release \
-    && make clean && make && make install \
-    && rm -rf /tmp/src
-# end siridb-server
+    && make clean && make -j $(nproc) && make install \
+    && apk del .build-deps \
+    && rm -rf /tmp/src \
+    && rm -rf /var/cache/apk/*
+# end siridb #
 
-ENV PATH=/home/app/unms/node_modules/.bin:$PATH:/usr/lib/postgresql/9.6/bin \
-  PGDATA=/config/postgres \
-  POSTGRES_DB=unms \
-  QUIET_MODE=0 \
-  WS_PORT=443 \
-  PUBLIC_HTTPS_PORT=443 \
-  PUBLIC_WS_PORT=443 \
-  UNMS_NETFLOW_PORT=2055 \
-  SECURE_LINK_SECRET=enigma \
-  SSL_CERT=""
+# start rabbitmq #
+COPY --from=rabbitmq /var/lib/rabbitmq/ /var/lib/rabbitmq/
+COPY --from=rabbitmq /etc/rabbitmq/ /etc/rabbitmq/
+COPY --from=rabbitmq /opt/rabbitmq/ /opt/rabbitmq/
+# end rabbitmq #
+
+WORKDIR /home/app/unms
+
+ENV PATH=/home/app/unms/node_modules/.bin:$PATH:/opt/rabbitmq/sbin \
+    PGDATA=/config/postgres \
+    POSTGRES_DB=unms \
+    QUIET_MODE=0 \
+    WS_PORT=443 \
+    PUBLIC_HTTPS_PORT=443 \
+    PUBLIC_WS_PORT=443 \
+    UNMS_NETFLOW_PORT=2055 \
+    NGINX_UID=1001
 
 EXPOSE 80 443 2055/udp
 

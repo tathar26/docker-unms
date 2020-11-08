@@ -10,6 +10,7 @@ export UNMS_HOST=127.0.0.1
 export UCRM_HOST=127.0.0.1
 export UCRM_HTTP_PORT=9081
 export UCRM_SUSPEND_PORT=9082
+. /sharedenv
 
 echo "Starting nginx..."
 
@@ -20,4 +21,4 @@ cd /
 # Fix permissions
 chown -R unms:unms /cert /config/cert
 
-s6-setuidgid root  nginx -g "daemon off;"
+s6-setuidgid root nginx -g "daemon off;"

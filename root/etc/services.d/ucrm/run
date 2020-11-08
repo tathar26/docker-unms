@@ -23,7 +23,6 @@ export RABBITMQ_USER=guest
 export RABBITMQ_PASSWORD=guest
 export NETFLOW_HOST=127.0.0.1
 export NETFLOW_PORT=2055
-export SECRET=changeThisSecretKey
 export SYMFONY_ENV=prod
 export FORCE_HTTPS=1
 export TRUSTED_PROXIES=all
@@ -35,7 +34,7 @@ export NGINX_VERSION=1.14.2
 export PGBOUNCER_VERSION=1.10.0
 export UNMS_HOST=127.0.0.1
 export UNMS_PORT=8081
-export UNMS_VERSION=1.2.7
+export UNMS_VERSION=1.3.0-beta.4
 export SUSPEND_PORT=9082
 export CLOUD=0
 export CLOUD_SMTP_PORT=null
@@ -54,12 +53,12 @@ until pg_isready; do
   sleep 1
 done
 
-# wait for unms to create user
+# wait for entrypoint to create user
 until id -u unms; do
-  echo "Waiting for unms to create user..."
+  echo "Waiting for entrypoint to create user..."
   sleep 1
 done
-
+chown -R unms:unms /usr/src/ucrm
 
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting UCRM in quiet mode..."
