@@ -9,7 +9,6 @@ FROM nico640/s6-alpine-node:testing
 
 # base deps postgres 9.6, redis, certbot
 RUN set -x \
-    && echo "amd64" > /etc/apk/arch \
     && apk update --no-cache \
     && apk add --root / --arch ${APK_ARCH} --no-cache postgresql=9.6.13-r0 postgresql-client=9.6.13-r0 \
        postgresql-contrib=9.6.13-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
