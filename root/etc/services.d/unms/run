@@ -40,7 +40,6 @@ until id -u unms; do
   echo "Waiting for entrypoint to create user..."
   sleep 1
 done
-chown -R unms:unms /home/app/unms
 
 # Create postgres database if it does not exist
 psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $POSTGRES_DB

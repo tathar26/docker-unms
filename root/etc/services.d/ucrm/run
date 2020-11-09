@@ -58,7 +58,6 @@ until id -u unms; do
   echo "Waiting for entrypoint to create user..."
   sleep 1
 done
-chown -R unms:unms /usr/src/ucrm
 
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting UCRM in quiet mode..."

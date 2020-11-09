@@ -57,8 +57,8 @@ RUN mkdir -p /usr/src/ucrm \
     && mkdir -p /tmp/supervisor.d \
     && mkdir -p /tmp/supervisord
 
-COPY --from=unms-crm /usr/src/ucrm /usr/src/ucrm
-COPY --from=unms-crm /data /data
+COPY --from=unms-crm --chown=1001:1001 /usr/src/ucrm /usr/src/ucrm
+COPY --from=unms-crm --chown=1001:1001 /data /data
 COPY --from=unms-crm /usr/local/bin/crm* /usr/local/bin/
 COPY --from=unms-crm /usr/local/bin/docker* /usr/local/bin/
 COPY --from=unms-crm /tmp/crontabs/server /tmp/crontabs/server
@@ -79,7 +79,7 @@ RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
 # end unms-crm #
 
 # start nginx / php #
-ENV NGINX_UID=1000 \
+ENV NGINX_UID=1001 \
     NGINX_VERSION=nginx-1.14.2 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
@@ -252,8 +252,7 @@ ENV PATH=/home/app/unms/node_modules/.bin:$PATH:/opt/rabbitmq/sbin \
     WS_PORT=443 \
     PUBLIC_HTTPS_PORT=443 \
     PUBLIC_WS_PORT=443 \
-    UNMS_NETFLOW_PORT=2055 \
-    NGINX_UID=1001
+    UNMS_NETFLOW_PORT=2055
 
 EXPOSE 80 443 2055/udp
 
