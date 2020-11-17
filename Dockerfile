@@ -1,8 +1,8 @@
-FROM ubnt/unms:1.3.0-beta.4 as unms
-FROM ubnt/unms-nginx:1.3.0-beta.4 as unms-nginx
-FROM ubnt/unms-netflow:1.3.0-beta.4 as unms-netflow
-FROM ubnt/unms-crm:3.3.0-beta.4 as unms-crm
-FROM ubnt/unms-siridb:1.3.0-beta.4 as unms-siridb
+FROM ubnt/unms:1.3.0-beta.5 as unms
+FROM ubnt/unms-nginx:1.3.0-beta.5 as unms-nginx
+FROM ubnt/unms-netflow:1.3.0-beta.5 as unms-netflow
+FROM ubnt/unms-crm:3.3.0-beta.5 as unms-crm
+FROM ubnt/unms-siridb:1.3.0-beta.5 as unms-siridb
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:testing
@@ -221,7 +221,7 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
 COPY --from=unms-siridb /etc/siridb/siridb.conf /etc/siridb/siridb.conf
 
 ENV LIBCLERI_VERSION=0.12.1 \
-    SIRIDB_VERSION=2.0.40
+    SIRIDB_VERSION=2.0.41
 
 RUN set -x \
     && apk add --no-cache --virtual .build-deps gcc make libuv-dev musl-dev pcre2-dev yajl-dev util-linux-dev \
