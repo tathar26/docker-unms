@@ -19,7 +19,7 @@ RUN set -x \
 # start unms #
 WORKDIR /home/app/unms
 
-# Copy UNMS app from offical image since the source code is not published at this time
+# copy unms app from offical image since the source code is not published at this time
 COPY --from=unms --chown=1001:1001 /home/app/unms /home/app/unms
 
 RUN rm -rf node_modules \
@@ -39,7 +39,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # start unms-netflow #
 WORKDIR /home/app/netflow
 
-COPY --from=unms-netflow /home/app /home/app/netflow
+COPY --from=unms-netflow --chown=1001:1001 /home/app /home/app/netflow
 
 RUN rm -rf node_modules \
     && apk add --no-cache --virtual .build-deps python3 g++ \
