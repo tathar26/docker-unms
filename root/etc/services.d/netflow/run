@@ -24,8 +24,8 @@ echo "Starting unms-netflow..."
 
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting Netflow in quiet mode..."
-  s6-setuidgid root node /home/app/netflow/index.js >> /config/unms/logs/unms.log 2>&1
+  s6-setuidgid unms node /home/app/netflow/index.js >> /config/unms/logs/unms.log 2>&1
 
 else
-  s6-setuidgid root node /home/app/netflow/index.js 2>&1 | tee -a /config/unms/logs/unms.log
+  s6-setuidgid unms node /home/app/netflow/index.js 2>&1 | tee -a /config/unms/logs/unms.log
 fi

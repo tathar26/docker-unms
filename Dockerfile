@@ -20,7 +20,7 @@ RUN set -x \
 WORKDIR /home/app/unms
 
 # Copy UNMS app from offical image since the source code is not published at this time
-COPY --from=unms /home/app/unms /home/app/unms
+COPY --from=unms --chown=1001:1001 /home/app/unms /home/app/unms
 
 RUN rm -rf node_modules \
     && apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
@@ -29,7 +29,8 @@ RUN rm -rf node_modules \
     && CHILD_CONCURRENCY=1 yarn install --frozen-lockfile --production --no-cache --ignore-engines --network-timeout 100000 \
     && yarn cache clean \
     && apk del .build-deps \
-    && rm -rf /var/cache/apk/*     
+    && rm -rf /var/cache/apk/* \
+    && setcap cap_net_raw=pe /usr/local/bin/node	
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

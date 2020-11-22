@@ -109,11 +109,11 @@ fi
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting UNMS in quiet mode..."
   cd /home/app/unms
-  s6-setuidgid root docker-entrypoint.sh /home/app/unms/index.js >> /config/unms/logs/unms.log 2>&1
+  s6-setuidgid unms docker-entrypoint.sh /home/app/unms/index.js >> /config/unms/logs/unms.log 2>&1
 
   printf "\n\nUNMS exited, last 100 lines of log:\n\n"
   tail -n 100 /config/unms/logs/unms.log
 else
   cd /home/app/unms
-  s6-setuidgid root docker-entrypoint.sh /home/app/unms/index.js 2>&1  | tee -a /config/unms/logs/unms.log
+  s6-setuidgid unms docker-entrypoint.sh /home/app/unms/index.js 2>&1  | tee -a /config/unms/logs/unms.log
 fi
