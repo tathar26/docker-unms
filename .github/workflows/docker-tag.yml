@@ -12,9 +12,6 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
-      - 
-        name: Get tag
-        run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
       -
         name: Login to DockerHub
         run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin      
@@ -23,6 +20,6 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            -t nico640/docker-unms:$RELEASE_VERSION -f Dockerfile \
+            -t nico640/docker-unms:${GITHUB_REF:10} -f Dockerfile \
             --push --cache-from type=local,src=/tmp/buildx-cache \
             --cache-to type=local,dest=/tmp/buildx-cache .

@@ -21,10 +21,3 @@
     su root root
     create 775 root root
 }
-
-/var/log/supervisor/*.log {
-    missingok
-    weekly
-    notifempty
-    nocompress
-}
