@@ -1,8 +1,8 @@
-FROM ubnt/unms:1.3.2 as unms
-FROM ubnt/unms-nginx:1.3.2 as unms-nginx
-FROM ubnt/unms-netflow:1.3.2 as unms-netflow
-FROM ubnt/unms-crm:3.3.2 as unms-crm
-FROM ubnt/unms-siridb:1.3.2 as unms-siridb
+FROM ubnt/unms:1.3.3 as unms
+FROM ubnt/unms-nginx:1.3.3 as unms-nginx
+FROM ubnt/unms-netflow:1.3.3 as unms-netflow
+FROM ubnt/unms-crm:3.3.3 as unms-crm
+FROM ubnt/unms-siridb:1.3.3 as unms-siridb
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:testing
