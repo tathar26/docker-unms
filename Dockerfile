@@ -17,6 +17,8 @@ RUN set -x \
        libzip gmp icu c-client supervisor libuv su-exec
 
 # start unms #
+RUN mkdir -p /home/app/unms \
+    && chown -R 1001:1001 /home/app
 WORKDIR /home/app/unms
 
 # copy unms app from offical image since the source code is not published at this time
@@ -37,6 +39,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # end unms #
 
 # start unms-netflow #
+RUN mkdir -p /home/app/netflow \
+    && chown -R 1001:1001 /home/app/netflow
 WORKDIR /home/app/netflow
 
 COPY --from=unms-netflow --chown=1001:1001 /home/app /home/app/netflow
