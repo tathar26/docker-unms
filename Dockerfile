@@ -1,8 +1,8 @@
-FROM ubnt/unms:1.3.5 as unms
-FROM ubnt/unms-nginx:1.3.5 as unms-nginx
-FROM ubnt/unms-netflow:1.3.5 as unms-netflow
-FROM ubnt/unms-crm:3.3.5 as unms-crm
-FROM ubnt/unms-siridb:1.3.5 as unms-siridb
+FROM ubnt/unms:1.3.6 as unms
+FROM ubnt/unms-nginx:1.3.6 as unms-nginx
+FROM ubnt/unms-netflow:1.3.6 as unms-netflow
+FROM ubnt/unms-crm:3.3.6 as unms-crm
+FROM ubnt/unms-siridb:1.3.6 as unms-siridb
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:testing
@@ -90,7 +90,7 @@ ENV NGINX_UID=1001 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
     NGINX_DEVEL_KIT_VERSION=0.3.1 \
-    PHP_VERSION=php-7.3.25
+    PHP_VERSION=php-7.3.26
 
 WORKDIR /tmp/src
 
