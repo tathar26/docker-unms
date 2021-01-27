@@ -1,15 +1,15 @@
-FROM ubnt/unms:1.3.6 as unms
-FROM ubnt/unms-nginx:1.3.6 as unms-nginx
-FROM ubnt/unms-netflow:1.3.6 as unms-netflow
-FROM ubnt/unms-crm:3.3.6 as unms-crm
-FROM ubnt/unms-siridb:1.3.6 as unms-siridb
+FROM ubnt/unms:1.3.7 as unms
+FROM ubnt/unms-nginx:1.3.7 as unms-nginx
+FROM ubnt/unms-netflow:1.3.7 as unms-netflow
+FROM ubnt/unms-crm:3.3.7 as unms-crm
+FROM ubnt/unms-siridb:1.3.7 as unms-siridb
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:testing
 
 # base deps postgres 9.6, redis, certbot
 RUN set -x \
-    && apk update --no-cache \
+    && apk upgrade --no-cache --update \
     && apk add --root / --arch ${APK_ARCH} --no-cache postgresql=9.6.13-r0 postgresql-client=9.6.13-r0 \
        postgresql-contrib=9.6.13-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
     && apk add --no-cache redis certbot gzip bash vim dumb-init openssl libcap sudo \
