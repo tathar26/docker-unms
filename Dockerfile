@@ -5,7 +5,7 @@ FROM ubnt/unms-crm:3.3.7 as unms-crm
 FROM ubnt/unms-siridb:1.3.7 as unms-siridb
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
-FROM nico640/s6-alpine-node:testing
+FROM nico640/s6-alpine-node:12.18.4-3.12
 
 # base deps postgres 9.6, redis, certbot
 RUN set -x \
