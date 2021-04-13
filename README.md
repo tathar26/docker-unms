@@ -1,9 +1,9 @@
 [![GitHub Release](https://img.shields.io/github/v/release/Nico640/docker-unms?style=flat-square)](https://github.com/nico640/docker-unms/releases)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/Nico640/docker-unms/Docker%20CI%20Release?style=flat-square)](https://github.com/Nico640/docker-unms/actions?query=workflow%3A%22Docker+CI+Release%22)
 
-# Docker UNMS
+# Docker UISP (formerly UNMS)
 
-This is an all-in-one Docker image for running the [Ubiquiti Network Management System](https://unms.com/). This image contains all the components required to run [UNMS](https://unms.com/) in a single container and uses the [s6-overlay](https://github.com/just-containers/s6-overlay) for process management.
+This is an all-in-one Docker image for running the [Ubiquiti Network Management System](https://uisp.ui.com/). This image contains all the components required to run [UISP](https://uisp.ui.com/) in a single container and uses the [s6-overlay](https://github.com/just-containers/s6-overlay) for process management.
 
 This image will run on most platforms that support Docker including [Docker for Mac](https://www.docker.com/docker-mac), [Docker for Windows](https://www.docker.com/docker-windows), Synology DSM and Raspberry Pi boards.
 
@@ -21,7 +21,7 @@ docker run \
 
 ## Raspberry Pi / ARM
 
-This image will also allow you to run [UNMS](https://unms.com/) on a Raspberry Pi or other Docker-enabled ARMv7/8 devices.
+This image will also allow you to run [UISP](https://uisp.ui.com/) on a Raspberry Pi or other Docker-enabled ARMv7/8 devices.
 
 ```
 docker run -d --name unms -p 80:80 -p 443:443 -p 2055:2055/udp -v </path/to/config>:/config nico640/docker-unms:latest
@@ -39,7 +39,7 @@ The parameters are split into two halves, separated by a colon, the left hand si
 
 *Optional Settings:*
 
-* `-e DEMO=false` - Enable UNMS demo mode
+* `-e DEMO=false` - Enable UISP demo mode
 * `-e PUBLIC_HTTPS_PORT=443` - This should match the HTTPS port your are exposing to on the docker host
 * `-e PUBLIC_WS_PORT=443` - This should match the HTTPS port your are exposing to on the docker host
 * `-e SECURE_LINK_SECRET=` - Random key for secure link module. Set this to something random.
@@ -48,9 +48,9 @@ The parameters are split into two halves, separated by a colon, the left hand si
 
 ## Limitations
 
-The Docker image, nico640/docker-unms, is not maintained by or affiliated with Ubiquiti Networks. You should not expect any support from Ubiquiti when running UNMS using this image.
+The Docker image, nico640/docker-unms, is not maintained by or affiliated with Ubiquiti Networks. You should not expect any support from Ubiquiti when running UISP (formerly UNMS) using this image.
 
-* In-app upgrades will not work. You can upgrade UNMS by downloading the latest version of this image.
+* In-app upgrades will not work. You can upgrade UISP by downloading the latest version of this image.
 
 ## Docker Compose
 
