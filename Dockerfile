@@ -1,37 +1,49 @@
-FROM ubnt/unms:1.3.11 as unms
-FROM ubnt/unms-nginx:1.3.11 as unms-nginx
-FROM ubnt/unms-netflow:1.3.11 as unms-netflow
-FROM ubnt/unms-crm:3.3.11 as unms-crm
-FROM ubnt/unms-siridb:1.3.11 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms:1.4.0-beta.10 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0-beta.10 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0-beta.10 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0-beta.10 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0-beta.10 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0-beta.10 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
-FROM nico640/s6-alpine-node:12.18.4-3.12
+FROM nico640/s6-alpine-node:dev
 
-# base deps postgres 9.6, redis, certbot
+# base deps postgres 13, certbot
 RUN set -x \
-    && apk upgrade --no-cache --update \
-    && apk add --root / --arch ${APK_ARCH} --no-cache postgresql=9.6.13-r0 postgresql-client=9.6.13-r0 \
-       postgresql-contrib=9.6.13-r0 --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
-    && apk add --no-cache redis certbot gzip bash vim dumb-init openssl libcap sudo \
+    && apk upgrade --no-cache \
+    && apk add --no-cache certbot gzip bash vim dumb-init openssl libcap sudo \
        pcre pcre2 yajl gettext coreutils make argon2-libs erlang jq vips tar xz \
-       libzip gmp icu c-client supervisor libuv su-exec
+       libzip gmp icu c-client supervisor libuv su-exec postgresql postgresql-client \
+       postgresql-contrib
 
 # start unms #
-RUN mkdir -p /home/app/unms \
+RUN mkdir -p /home/app/unms/tmp \
     && chown -R 1001:1001 /home/app
 WORKDIR /home/app/unms
 
 # copy unms app from offical image since the source code is not published at this time
 COPY --from=unms --chown=1001:1001 /home/app/unms /home/app/unms
 
-RUN rm -rf node_modules \
-    && apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
-    && sed -i "/postinstall/d" /home/app/unms/package.json \
+ENV LIBVIPS_VERSION=8.11.3
+
+RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && CHILD_CONCURRENCY=1 yarn install --frozen-lockfile --production --no-cache --ignore-engines --network-timeout 100000 \
+    && mkdir -p /tmp/src && cd /tmp/src \
+    && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
+    && tar -zxvf libvips.tar.gz \
+    && cd /tmp/src/vips-${LIBVIPS_VERSION} && ./configure \
+    && make && make install \
+    && cd /home/app/unms \
+    && mv node_modules/@ubnt/* tmp/ \
+    && sed -i 's#"@ubnt/images": ".*"#"@ubnt/images": "file:../images"#g' tmp/ui-components/package.json \
+    && sed -i 's#"@ubnt/icons": ".*"#"@ubnt/icons": "file:../icons"#g' tmp/link-core/package.json \
+    && sed -i 's#"@ubnt/ui-components": ".*"#"@ubnt/ui-components": "file:../ui-components"#g' tmp/link-core/package.json \
+    && sed -i 's#"@ubnt/link-core": ".*"#"@ubnt/link-core": "file:./tmp/link-core"#g' package.json \
+    && rm -rf node_modules \
+    && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines --network-timeout 100000 \
     && yarn cache clean \
     && apk del .build-deps \
-    && rm -rf /var/cache/apk/* \
+    && rm -rf /var/cache/apk/* tmp /tmp/src \
     && setcap cap_net_raw=pe /usr/local/bin/node	
 
 COPY --from=unms /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
@@ -90,14 +102,14 @@ ENV NGINX_UID=1001 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
     NGINX_DEVEL_KIT_VERSION=0.3.1 \
-    PHP_VERSION=php-7.3.26
+    PHP_VERSION=php-7.4.25
 
 WORKDIR /tmp/src
 
 RUN set -x \
     && apk add --no-cache --virtual .build-deps openssl-dev pcre-dev zlib-dev build-base libffi-dev python3-dev \
-       argon2-dev coreutils curl-dev libedit-dev libsodium-dev libxml2-dev openssl-dev sqlite-dev autoconf dpkg-dev \
-       dpkg   file   g++   gcc   libc-dev   make   pkgconf   re2c \
+       argon2-dev coreutils curl-dev libsodium-dev libxml2-dev linux-headers oniguruma-dev openssl-dev readline-dev \
+       sqlite-dev autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
     && curl -SL http://nginx.org/download/${NGINX_VERSION}.tar.gz | tar xvz \
     && curl -SL https://github.com/openresty/lua-nginx-module/archive/v${LUA_NGINX_VERSION}.tar.gz | tar xvz \
     && curl -SL https://github.com/simpl/ngx_devel_kit/archive/v${NGINX_DEVEL_KIT_VERSION}.tar.gz | tar xvz \
@@ -107,25 +119,32 @@ RUN set -x \
     && cp php.tar.xz /usr/src \
     && cd /tmp/src/LuaJIT-${LUAJIT_VERSION} && make amalg PREFIX='/usr' -j $(nproc) && make install PREFIX='/usr' \
     && export LUAJIT_LIB=/usr/lib/libluajit-5.1.so && export LUAJIT_INC=/usr/include/luajit-2.1 \
+    && mkdir -p /tmp/nginx \
     && cd /tmp/src/${NGINX_VERSION} && ./configure \
         --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2' \
         --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now -fPIC' \
         --with-pcre-jit \
         --with-threads \
+        --with-file-aio \
         --add-module=/tmp/src/lua-nginx-module-${LUA_NGINX_VERSION} \
         --add-module=/tmp/src/ngx_devel_kit-${NGINX_DEVEL_KIT_VERSION} \
         --with-http_ssl_module \
+        --with-http_v2_module \
         --with-http_realip_module \
+        --with-http_addition_module \
+        --with-http_sub_module \
+        --with-http_gunzip_module \
         --with-http_gzip_static_module \
+        --with-http_auth_request_module \
+        --with-http_random_index_module \
         --with-http_secure_link_module \
-        --without-mail_pop3_module \
-        --without-mail_imap_module \
-        --without-http_upstream_ip_hash_module \
-        --without-http_memcached_module \
-        --without-http_auth_basic_module \
-        --without-http_userid_module \
-        --without-http_uwsgi_module \
-        --without-http_scgi_module \
+        --with-http_slice_module \
+        --with-http_stub_status_module \
+        --with-mail \
+        --with-mail_ssl_module \
+        --with-stream \
+        --with-stream_ssl_module \
+        --with-stream_realip_module \
         --prefix=/var/lib/nginx \
         --sbin-path=/usr/sbin/nginx \
         --conf-path=/etc/nginx/nginx.conf \
@@ -133,28 +152,38 @@ RUN set -x \
         --error-log-path=/dev/stderr \
         --lock-path=/tmp/nginx.lock \
         --pid-path=/tmp/nginx.pid \
-        --http-client-body-temp-path=/tmp/body \
-        --http-proxy-temp-path=/tmp/proxy \
+        --http-client-body-temp-path=/tmp/nginx/client \
+        --http-proxy-temp-path=/tmp/nginx/proxy \
+        --http-fastcgi-temp-path=/tmp/nginx/fastcgi \
+        --http-uwsgi-temp-path=/tmp/nginx/uwsgi \
+        --http-scgi-temp-path=/tmp/nginx/scgi \
     && make -j $(nproc) \
     && make install \
+    && export CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" \
+    && export CPPFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" \
+    && export LDFLAGS="-Wl,-O1 -pie" \
     && cd /tmp/src/${PHP_VERSION} && ./configure \
         --with-config-file-path="/usr/local/etc/php" \
         --with-config-file-scan-dir="/usr/local/etc/php/conf.d" \
         --enable-option-checking=fatal \
         --with-mhash \
+        --with-pic \
         --enable-ftp \
         --enable-mbstring \
         --enable-mysqlnd \
         --with-password-argon2 \
         --with-sodium=shared \
+        --with-pdo-sqlite=/usr \
+        --with-sqlite3=/usr \ 
         --with-curl \
-        --with-libedit \
         --with-openssl \
+        --with-readline \
         --with-zlib \
+        --with-pear \
         --enable-fpm \
+        --disable-cgi \
         --with-fpm-user=www-data \
         --with-fpm-group=www-data \
-        --disable-cgi \
     && make -j $(nproc) \
     && make install \
     && apk del .build-deps \
@@ -168,10 +197,13 @@ RUN set -x \
 COPY --from=unms-crm /etc/nginx/available-servers /etc/nginx/ucrm
 
 COPY --from=unms-nginx /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /openssl.cnf /ip-whitelist.sh /
+COPY --from=unms-postgres /usr/local/bin/migrate.sh /
 COPY --from=unms-nginx /templates /templates
 COPY --from=unms-nginx /www/public /www/public
 
-RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /ip-whitelist.sh \
+RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /ip-whitelist.sh /migrate.sh \
+    && sed -i 's#NEW_BIN_DIR="/usr/local/bin"#NEW_BIN_DIR="/usr/bin"#g' /migrate.sh \
+    && sed -i "s#-c listen_addresses=''#-c listen_addresses='' -p 50432#g" /migrate.sh \
     && sed -i "s#80#9081#g" /etc/nginx/ucrm/ucrm.conf \
     && sed -i "s#81#9082#g" /etc/nginx/ucrm/suspended_service.conf \
     && sed -i '/conf;/a \ \ include /etc/nginx/ucrm/*.conf;' /templates/nginx.conf.template \
@@ -188,27 +220,22 @@ COPY --from=unms-crm /usr/local/etc/php-fpm.conf /usr/local/etc/
 COPY --from=unms-crm /usr/local/etc/php-fpm.d /usr/local/etc/php-fpm.d
 
 RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
-    bzip2-dev freetype-dev imap-dev libjpeg-turbo-dev libpng-dev libwebp-dev libzip-dev gmp-dev icu-dev \
-    libxml2-dev curl-dev krb5-dev \
-    && apk add --root / --arch ${APK_ARCH} --no-cache --virtual .postgres-dev postgresql-dev=9.6.13-r0 \
-	   --repository=http://dl-cdn.alpinelinux.org/alpine/v3.6/main \
+    bzip2-dev freetype-dev libjpeg-turbo-dev libpng-dev libwebp-dev libzip-dev gmp-dev icu-dev \
+    libxml2-dev postgresql-dev \
     && docker-php-source extract \
     && cd /usr/src/php \
     && pecl channel-update pecl.php.net \
     && echo '' | pecl install apcu ds \
     && docker-php-ext-enable apcu ds \
     && docker-php-ext-configure gd \
-        --with-gd \
-        --with-freetype-dir=/usr/include/ \
-        --with-png-dir=/usr/include/ \
-        --with-jpeg-dir=/usr/include/ \
-    && docker-php-ext-configure curl \
-    && docker-php-ext-configure imap \
-        --with-imap-ssl \
-    && docker-php-ext-install -j2 pdo_pgsql gmp zip bcmath gd bz2 curl \
-      exif intl dom xml opcache imap soap sockets sysvmsg sysvshm sysvsem \
+        --enable-gd \
+        --with-freetype=/usr/include/ \
+        --with-webp=/usr/include/ \
+        --with-jpeg=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) bcmath bz2 exif gd gmp intl opcache \
+       pdo_pgsql soap sockets sysvmsg sysvsem sysvshm zip \
     && curl -sS https://getcomposer.org/installer | php -- \
-        --install-dir=/usr/bin --filename=composer --1 \
+        --install-dir=/usr/bin --filename=composer \
     && cd /usr/src/ucrm \
     && composer install \
         --classmap-authoritative \
@@ -218,7 +245,6 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
     && rm /usr/bin/composer \
     && docker-php-source delete \
     && apk del .build-deps \
-    && apk del .postgres-dev \
     && rm -rf /var/cache/apk/* \
     && sed -i 's#nginx#unms#g' /usr/local/etc/php-fpm.d/zz-docker.conf
 # end php plugins / composer #

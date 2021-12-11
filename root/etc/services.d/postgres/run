@@ -1,4 +1,56 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bash
 
 echo "Starting postgres..."
+
+cleanupMigration() {
+  echo "cleaning up failed migration attempt"
+  rm -rf "${PGDATA}/data_new" "${PGDATA}/analyze_new_cluster.sh" "${PGDATA}/delete_old_cluster.sh"
+  mv "${PGDATA}/data_old/"* "${PGDATA}"
+  rm -rf "${PGDATA}/data_old"
+  if [ -f "${PGDATA}/global/pg_control.old" ]; then
+    mv "${PGDATA}/global/pg_control.old" "${PGDATA}/global/pg_control"
+  fi
+}
+
+if [ -d "${PGDATA}/data_old" ]; then
+  cleanupMigration
+fi
+
+if [ -f "${PGDATA}/PG_VERSION" ] && [ $(cat "${PGDATA}/PG_VERSION" || echo "") == "9.6" ]; then
+  echo "postgres 9.6 detected, starting migration"
+
+  if [ ! -d "/config/postgres_9.6" ]; then
+    echo "backing up postgres data to /config/postgres_9.6"
+    cp -r /config/postgres/ /config/postgres_9.6
+  fi
+
+  echo "downloading postgres 9.6 and dependencies"
+  cp /etc/apk/repositories /etc/apk/repositories_temp
+  echo "https://dl-cdn.alpinelinux.org/alpine/v3.6/main" > /etc/apk/repositories
+  mkdir -p /postgres/9.6
+  if ! apk fetch --no-cache -U postgresql postgresql-contrib libressl2.5-libcrypto libressl2.5-libssl -o /postgres; then
+    echo "ERROR: download of postgres 9.6 and dependencies FAILED, retrying migration..."
+    mv /etc/apk/repositories_temp /etc/apk/repositories
+    exit 1
+  fi
+
+  mv /etc/apk/repositories_temp /etc/apk/repositories
+  echo "download complete, unpacking files"
+
+  cat /postgres/postgres* | tar xvz -iC /postgres/9.6 usr --strip-components 1
+  cat /postgres/libressl* | tar xvz -iC /postgres lib
+  echo "files unpacked, running migration script"
+
+  if ! LD_LIBRARY_PATH=/postgres/lib s6-setuidgid postgres bash /migrate.sh 9.6; then
+    echo "ERROR: MIGRATION FAILED!"
+    echo "IF THIS FAILS AGAIN PLEASE EXAMINE UPGRADE LOGS AT ${PGDATA}"
+    cleanupMigration
+    echo "trying to start postgres anyways"
+  fi
+
+  echo "migration done, removing postgres 9.6"
+  rm -rf /postgres
+  echo "postgres 9.6 removed, starting postgres 13..."
+fi
+
 s6-setuidgid postgres postgres
