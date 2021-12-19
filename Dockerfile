@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:1.4.0-beta.10 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0-beta.10 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0-beta.10 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0-beta.10 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0-beta.10 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0-beta.10 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:1.4.0-beta.12 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0-beta.12 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0-beta.12 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0-beta.12 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0-beta.12 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0-beta.12 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:dev
@@ -16,19 +16,24 @@ RUN set -x \
        libzip gmp icu c-client supervisor libuv su-exec postgresql postgresql-client \
        postgresql-contrib
 
+# temporarily include postgres 9.6 because it is needed for migration from older versions
+WORKDIR /postgres/9.6
+RUN cp /etc/apk/repositories /etc/apk/repositories_temp \
+    && echo "https://dl-cdn.alpinelinux.org/alpine/v3.6/main" > /etc/apk/repositories \
+    && apk fetch --root / --arch ${APK_ARCH} --no-cache -U postgresql postgresql-contrib libressl2.5-libcrypto libressl2.5-libssl -o /postgres \
+    && mv /etc/apk/repositories_temp /etc/apk/repositories
+
 # start unms #
-RUN mkdir -p /home/app/unms/tmp \
-    && chown -R 1001:1001 /home/app
 WORKDIR /home/app/unms
 
 # copy unms app from offical image since the source code is not published at this time
-COPY --from=unms --chown=1001:1001 /home/app/unms /home/app/unms
+COPY --from=unms /home/app/unms /home/app/unms
 
 ENV LIBVIPS_VERSION=8.11.3
 
 RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && ln -s /usr/bin/python3 /usr/bin/python \
-    && mkdir -p /tmp/src && cd /tmp/src \
+    && mkdir -p /tmp/src /home/app/unms/tmp && cd /tmp/src \
     && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
     && tar -zxvf libvips.tar.gz \
     && cd /tmp/src/vips-${LIBVIPS_VERSION} && ./configure \
@@ -51,11 +56,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # end unms #
 
 # start unms-netflow #
-RUN mkdir -p /home/app/netflow \
-    && chown -R 1001:1001 /home/app/netflow
 WORKDIR /home/app/netflow
 
-COPY --from=unms-netflow --chown=1001:1001 /home/app /home/app/netflow
+COPY --from=unms-netflow /home/app /home/app/netflow
 
 RUN rm -rf node_modules \
     && apk add --no-cache --virtual .build-deps python3 g++ \
@@ -74,8 +77,8 @@ RUN mkdir -p /usr/src/ucrm \
     && mkdir -p /tmp/supervisor.d \
     && mkdir -p /tmp/supervisord
 
-COPY --from=unms-crm --chown=1001:1001 /usr/src/ucrm /usr/src/ucrm
-COPY --from=unms-crm --chown=1001:1001 /data /data
+COPY --from=unms-crm /usr/src/ucrm /usr/src/ucrm
+COPY --from=unms-crm /data /data
 COPY --from=unms-crm /usr/local/bin/crm* /usr/local/bin/
 COPY --from=unms-crm /usr/local/bin/docker* /usr/local/bin/
 COPY --from=unms-crm /tmp/crontabs/server /tmp/crontabs/server
@@ -97,12 +100,11 @@ RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
 # end unms-crm #
 
 # start nginx / php #
-ENV NGINX_UID=1001 \
-    NGINX_VERSION=nginx-1.14.2 \
+ENV NGINX_VERSION=nginx-1.14.2 \
     LUAJIT_VERSION=2.1.0-beta3 \
     LUA_NGINX_VERSION=0.10.14 \
     NGINX_DEVEL_KIT_VERSION=0.3.1 \
-    PHP_VERSION=php-7.4.25
+    PHP_VERSION=php-7.4.26
 
 WORKDIR /tmp/src
 

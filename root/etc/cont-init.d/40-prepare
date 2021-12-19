@@ -2,7 +2,7 @@
 
 # Redis
 [ -e /config/redis ] || mkdir -p /config/redis
-chown -R abc:abc /config/redis
+chown -R unms:unms /config/redis
 
 #SiriDB
 [ -e /config/siridb ] || mv /var/lib/siridb /config/siridb
@@ -19,13 +19,13 @@ ln -s /config/siridb /var/lib/siridb
 ln -s /config/unms /home/app/unms/data
 
 # UCRM
-[ -e /config/unms/ucrm ] && chown -R 1001:1001 /config/unms || mv /data /config/unms/ucrm
+[ -e /config/unms/ucrm ] && chown -R unms:unms /config/unms || mv /data /config/unms/ucrm
 [ -d /data ] && rm -rf /data
 ln -s /config/unms/ucrm /data
 
 # Nginx Firmware
 mkdir -p /home/app/unms/public/firmwares /www
-chown -R 1001:1001 /home/app/unms/public/firmwares
+chown -R unms:unms /home/app/unms/public/firmwares
 ln -s /home/app/unms/public/firmwares /www/firmwares
 
 # Certs

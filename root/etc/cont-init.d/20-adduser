@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv sh
+
+PUID=${PUID:-911}
+PGID=${PGID:-911}
+
+addgroup -g "$PGID" unms
+adduser -D -u "$PUID" -G unms unms
+
+echo "
+-------------------------------------
+GID/UID
+-------------------------------------
+User uid:    $(id -u unms)
+User gid:    $(id -g unms)
+-------------------------------------
+"

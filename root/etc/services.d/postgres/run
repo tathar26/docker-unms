@@ -24,24 +24,12 @@ if [ -f "${PGDATA}/PG_VERSION" ] && [ $(cat "${PGDATA}/PG_VERSION" || echo "") =
     cp -r /config/postgres/ /config/postgres_9.6
   fi
 
-  echo "downloading postgres 9.6 and dependencies"
-  cp /etc/apk/repositories /etc/apk/repositories_temp
-  echo "https://dl-cdn.alpinelinux.org/alpine/v3.6/main" > /etc/apk/repositories
-  mkdir -p /postgres/9.6
-  if ! apk fetch --no-cache -U postgresql postgresql-contrib libressl2.5-libcrypto libressl2.5-libssl -o /postgres; then
-    echo "ERROR: download of postgres 9.6 and dependencies FAILED, retrying migration..."
-    mv /etc/apk/repositories_temp /etc/apk/repositories
-    exit 1
-  fi
-
-  mv /etc/apk/repositories_temp /etc/apk/repositories
-  echo "download complete, unpacking files"
-
+  echo "unpacking postgres 9.6 and dependencies"
   cat /postgres/postgres* | tar xvz -iC /postgres/9.6 usr --strip-components 1
   cat /postgres/libressl* | tar xvz -iC /postgres lib
   echo "files unpacked, running migration script"
 
-  if ! LD_LIBRARY_PATH=/postgres/lib s6-setuidgid postgres bash /migrate.sh 9.6; then
+  if ! LD_LIBRARY_PATH=/postgres/lib s6-setuidgid unms bash /migrate.sh 9.6; then
     echo "ERROR: MIGRATION FAILED!"
     echo "IF THIS FAILS AGAIN PLEASE EXAMINE UPGRADE LOGS AT ${PGDATA}"
     cleanupMigration
@@ -53,4 +41,4 @@ if [ -f "${PGDATA}/PG_VERSION" ] && [ $(cat "${PGDATA}/PG_VERSION" || echo "") =
   echo "postgres 9.6 removed, starting postgres 13..."
 fi
 
-s6-setuidgid postgres postgres
+s6-setuidgid unms postgres

@@ -35,12 +35,6 @@ until pg_isready; do
   sleep 1
 done
 
-# wait for entrypoint to create user
-until id -u unms; do
-  echo "Waiting for entrypoint to create user..."
-  sleep 1
-done
-
 # Create postgres database if it does not exist
 psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $POSTGRES_DB
 if [ $? -ne 0 ]; then

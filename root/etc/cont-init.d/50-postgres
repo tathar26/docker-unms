@@ -1,13 +1,11 @@
 #!/usr/bin/with-contenv sh
 
-addgroup -g 70 -S postgres
-adduser -u 70 -S -D -G postgres -H -h /config/postgres -s /bin/sh postgres
 mkdir -p /config/postgres /run/postgresql /var/run/postgresql
-chown -R postgres:postgres /config/postgres /run/postgresql /var/run/postgresql
+chown -R unms:unms /config/postgres /run/postgresql /var/run/postgresql
 chmod 0700 /config/postgres
 
 if [ -e /config/postgres/postgresql.conf ]; then
   echo "Database already configured"
 else
-  s6-setuidgid postgres initdb --locale=C.UTF-8
+  s6-setuidgid unms initdb --locale=C.UTF-8
 fi
