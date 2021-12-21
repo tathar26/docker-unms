@@ -29,16 +29,16 @@ if [ -f "${PGDATA}/PG_VERSION" ] && [ $(cat "${PGDATA}/PG_VERSION" || echo "") =
   cat /postgres/libressl* | tar xvz -iC /postgres lib
   echo "files unpacked, running migration script"
 
-  if ! LD_LIBRARY_PATH=/postgres/lib s6-setuidgid unms bash /migrate.sh 9.6; then
+  if LD_LIBRARY_PATH=/postgres/lib s6-setuidgid unms bash /migrate.sh 9.6; then
+    echo "migration done, removing postgres 9.6"
+    rm -rf /postgres
+    echo "postgres 9.6 removed, starting postgres 13..."
+  else
     echo "ERROR: MIGRATION FAILED!"
     echo "IF THIS FAILS AGAIN PLEASE EXAMINE UPGRADE LOGS AT ${PGDATA}"
     cleanupMigration
     echo "trying to start postgres anyways"
   fi
-
-  echo "migration done, removing postgres 9.6"
-  rm -rf /postgres
-  echo "postgres 9.6 removed, starting postgres 13..."
 fi
 
 s6-setuidgid unms postgres

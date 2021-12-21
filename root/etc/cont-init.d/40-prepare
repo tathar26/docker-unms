@@ -1,9 +1,5 @@
 #!/usr/bin/with-contenv sh
 
-# Redis
-[ -e /config/redis ] || mkdir -p /config/redis
-chown -R unms:unms /config/redis
-
 #SiriDB
 [ -e /config/siridb ] || mv /var/lib/siridb /config/siridb
 [ -d /var/lib/siridb ] && rm -rf /var/lib/siridb
@@ -37,10 +33,6 @@ ln -s /config/usercert /usercert
 # UNMS / UCRM Logs
 [ -e /config/unms/logs ] || mkdir -p /config/unms/logs
 chown -R nobody:nogroup /config/unms/logs
-
-# Service Logs
-[ -e /config/logs ] || mkdir -p /config/logs
-chown -R nobody:nogroup /config/logs
 
 # Clean cron
 [ -f /var/run/crond.pid ] && rm -rf /var/run/crond.pid
