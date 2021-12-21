@@ -1,8 +1,8 @@
 #!/usr/bin/with-contenv sh
 
-chown -R unms:unms /cert
-chown -R unms:unms /home/app
+chown -R unms:unms /usr/src/ucrm/web
+chown -R unms:unms /usr/src/ucrm/app/cache
 chown -R unms:unms /config
-chown -R unms:unms /usr/src/ucrm
 chown -R unms:unms /data
-chmod -R 0644 /etc/logrotate.d 
+chown unms:unms /home/app
+chmod -R 0644 /etc/logrotate.d
