@@ -44,6 +44,8 @@ The parameters are split into two halves, separated by a colon, the left hand si
 * `-e PUBLIC_WS_PORT=443` - This should match the HTTPS port your are exposing to on the docker host
 * `-e SSL_CERT=` - Filename of custom SSL certificate in /config/usercert/
 * `-e SSL_CERT_KEY=` - Filename of custom SSL key in /config/usercert/
+* `-e PUID=911` - User ID of the container user
+* `-e PGID=911` - Group ID of the container user
 
 ## Limitations
 
