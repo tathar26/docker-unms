@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:1.4.0-beta.12 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0-beta.12 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0-beta.12 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0-beta.12 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0-beta.12 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0-beta.12 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:1.4.0 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:dev
