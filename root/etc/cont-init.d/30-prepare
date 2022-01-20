@@ -15,13 +15,12 @@ ln -s /config/siridb /var/lib/siridb
 ln -s /config/unms /home/app/unms/data
 
 # UCRM
-[ -e /config/unms/ucrm ] && chown -R unms:unms /config/unms || mv /data /config/unms/ucrm
+[ -e /config/unms/ucrm ] && mv /data /config/unms/ucrm
 [ -d /data ] && rm -rf /data
 ln -s /config/unms/ucrm /data
 
 # Nginx Firmware
 mkdir -p /home/app/unms/public/firmwares /www
-chown -R unms:unms /home/app/unms/public/firmwares
 ln -s /home/app/unms/public/firmwares /www/firmwares
 
 # Certs
@@ -32,7 +31,6 @@ ln -s /config/usercert /usercert
 
 # UNMS / UCRM Logs
 [ -e /config/unms/logs ] || mkdir -p /config/unms/logs
-chown -R nobody:nogroup /config/unms/logs
 
 # Clean cron
 [ -f /var/run/crond.pid ] && rm -rf /var/run/crond.pid
