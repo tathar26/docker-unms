@@ -15,7 +15,7 @@ ln -s /config/siridb /var/lib/siridb
 ln -s /config/unms /home/app/unms/data
 
 # UCRM
-[ -e /config/unms/ucrm ] && mv /data /config/unms/ucrm
+[ -e /config/unms/ucrm ] || mv /data /config/unms/ucrm
 [ -d /data ] && rm -rf /data
 ln -s /config/unms/ucrm /data
 
