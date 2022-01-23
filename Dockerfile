@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:1.4.0 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.0 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.0 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.4.0 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.0 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.0 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:1.4.2 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.2 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.2 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.4.2 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.2 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.2 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
 FROM nico640/s6-alpine-node:testing
@@ -99,68 +99,78 @@ RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
     && sed -i "s#crm-extra-programs-enabled && run-parts /etc/periodic/daily#run-parts /etc/periodic/daily#g" /tmp/crontabs/server
 # end unms-crm #
 
-# start nginx / php #
-ENV NGINX_VERSION=nginx-1.14.2 \
-    LUAJIT_VERSION=2.1.0-beta3 \
-    LUA_NGINX_VERSION=0.10.14 \
-    NGINX_DEVEL_KIT_VERSION=0.3.1 \
-    PHP_VERSION=php-7.4.26
+# start openresty #
+ENV OPEN_RESTY_VERSION=openresty-1.19.9.1
+
+WORKDIR /tmp/src
+
+RUN apk add --no-cache --virtual .build-deps gcc g++ pcre-dev openssl-dev zlib-dev perl \
+    && export CC="gcc -fdiagnostics-color=always -g3" \
+    && curl -SL https://openresty.org/download/${OPEN_RESTY_VERSION}.tar.gz | tar xvz \
+    && cd /tmp/src/${OPEN_RESTY_VERSION} && ./configure \
+        --prefix="/usr/local/openresty" \
+        --with-cc='gcc -fdiagnostics-color=always -g3' \
+        --with-cc-opt="-DNGX_LUA_ABORT_AT_PANIC" \
+        --with-pcre-jit \
+        --without-http_rds_json_module \
+        --without-http_rds_csv_module \
+        --without-lua_rds_parser \
+        --with-stream \
+        --with-stream_ssl_module \
+        --with-stream_ssl_preread_module \
+        --with-http_v2_module \
+        --without-mail_pop3_module \
+        --without-mail_imap_module \
+        --without-mail_smtp_module \
+        --with-http_stub_status_module \
+        --with-http_realip_module \
+        --with-http_addition_module \
+        --with-http_auth_request_module \
+        --with-http_secure_link_module \
+        --with-http_random_index_module \
+        --with-http_gzip_static_module \
+        --with-http_sub_module \
+        --with-http_dav_module \
+        --with-http_flv_module \
+        --with-http_mp4_module \
+        --with-http_gunzip_module \
+        --with-threads \
+        --with-compat \
+        --with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
+        -j$(nproc) \
+    && make -j$(nproc) \
+    && make install \
+    && apk del .build-deps \
+    && rm -rf /tmp/src /var/cache/apk/* \
+    && echo "unms ALL=(ALL) NOPASSWD: /usr/local/openresty/nginx/sbin/nginx -s *" >> /etc/sudoers \
+    && echo "unms ALL=(ALL) NOPASSWD: /bin/cat *" >> /etc/sudoers \
+    && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-configuration.sh *" >> /etc/sudoers
+
+COPY --from=unms-crm /etc/nginx/available-servers /usr/local/openresty/nginx/conf/ucrm
+COPY --from=unms-postgres /usr/local/bin/migrate.sh /
+COPY --from=unms-nginx /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /openssl.cnf /ip-whitelist.sh /
+COPY --from=unms-nginx /usr/local/openresty/nginx/templates /usr/local/openresty/nginx/templates
+COPY --from=unms-nginx /www/public /www/public
+
+RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /ip-whitelist.sh /migrate.sh \
+    && sed -i 's#NEW_BIN_DIR="/usr/local/bin"#NEW_BIN_DIR="/usr/bin"#g' /migrate.sh \
+    && sed -i "s#-c listen_addresses=''#-c listen_addresses='' -p 50432#g" /migrate.sh \
+    && sed -i "s#80#9081#g" /usr/local/openresty/nginx/conf/ucrm/ucrm.conf \
+    && sed -i "s#81#9082#g" /usr/local/openresty/nginx/conf/ucrm/suspended_service.conf \
+    && sed -i '/conf;/a \ \ include /usr/local/openresty/nginx/conf/ucrm/*.conf;' /usr/local/openresty/nginx/templates/nginx.conf.template
+# end openresty #
+
+# start php #
+ENV PHP_VERSION=php-7.4.26
 
 WORKDIR /tmp/src
 
 RUN set -x \
-    && apk add --no-cache --virtual .build-deps openssl-dev pcre-dev zlib-dev build-base libffi-dev python3-dev \
-       argon2-dev coreutils curl-dev libsodium-dev libxml2-dev linux-headers oniguruma-dev openssl-dev readline-dev \
-       sqlite-dev autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
-    && curl -SL http://nginx.org/download/${NGINX_VERSION}.tar.gz | tar xvz \
-    && curl -SL https://github.com/openresty/lua-nginx-module/archive/v${LUA_NGINX_VERSION}.tar.gz | tar xvz \
-    && curl -SL https://github.com/simpl/ngx_devel_kit/archive/v${NGINX_DEVEL_KIT_VERSION}.tar.gz | tar xvz \
-    && curl -SL http://luajit.org/download/LuaJIT-${LUAJIT_VERSION}.tar.gz | tar xvz \
+    && apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
+       argon2-dev coreutils curl-dev libsodium-dev libxml2-dev linux-headers oniguruma-dev openssl-dev readline-dev sqlite-dev \
     && curl -SL https://www.php.net/get/${PHP_VERSION}.tar.xz/from/this/mirror -o php.tar.xz \
     && tar -xvf php.tar.xz \
     && cp php.tar.xz /usr/src \
-    && cd /tmp/src/LuaJIT-${LUAJIT_VERSION} && make amalg PREFIX='/usr' -j $(nproc) && make install PREFIX='/usr' \
-    && export LUAJIT_LIB=/usr/lib/libluajit-5.1.so && export LUAJIT_INC=/usr/include/luajit-2.1 \
-    && mkdir -p /tmp/nginx \
-    && cd /tmp/src/${NGINX_VERSION} && ./configure \
-        --with-cc-opt='-g -O2 -fPIE -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2' \
-        --with-ld-opt='-Wl,-Bsymbolic-functions -fPIE -pie -Wl,-z,relro -Wl,-z,now -fPIC' \
-        --with-pcre-jit \
-        --with-threads \
-        --with-file-aio \
-        --add-module=/tmp/src/lua-nginx-module-${LUA_NGINX_VERSION} \
-        --add-module=/tmp/src/ngx_devel_kit-${NGINX_DEVEL_KIT_VERSION} \
-        --with-http_ssl_module \
-        --with-http_v2_module \
-        --with-http_realip_module \
-        --with-http_addition_module \
-        --with-http_sub_module \
-        --with-http_gunzip_module \
-        --with-http_gzip_static_module \
-        --with-http_auth_request_module \
-        --with-http_random_index_module \
-        --with-http_secure_link_module \
-        --with-http_slice_module \
-        --with-http_stub_status_module \
-        --with-mail \
-        --with-mail_ssl_module \
-        --with-stream \
-        --with-stream_ssl_module \
-        --with-stream_realip_module \
-        --prefix=/var/lib/nginx \
-        --sbin-path=/usr/sbin/nginx \
-        --conf-path=/etc/nginx/nginx.conf \
-        --http-log-path=/dev/stdout \
-        --error-log-path=/dev/stderr \
-        --lock-path=/tmp/nginx.lock \
-        --pid-path=/tmp/nginx.pid \
-        --http-client-body-temp-path=/tmp/nginx/client \
-        --http-proxy-temp-path=/tmp/nginx/proxy \
-        --http-fastcgi-temp-path=/tmp/nginx/fastcgi \
-        --http-uwsgi-temp-path=/tmp/nginx/uwsgi \
-        --http-scgi-temp-path=/tmp/nginx/scgi \
-    && make -j $(nproc) \
-    && make install \
     && export CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" \
     && export CPPFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" \
     && export LDFLAGS="-Wl,-O1 -pie" \
@@ -189,29 +199,8 @@ RUN set -x \
     && make -j $(nproc) \
     && make install \
     && apk del .build-deps \
-    && rm "/usr/bin/luajit-${LUAJIT_VERSION}" \
-    && rm -rf /tmp/src \
-    && rm -rf /var/cache/apk/* \
-    && echo "unms ALL=(ALL) NOPASSWD: /usr/sbin/nginx -s *" >> /etc/sudoers \
-    && echo "unms ALL=(ALL) NOPASSWD: /bin/cat *" >> /etc/sudoers \
-    && echo "unms ALL=(ALL) NOPASSWD:SETENV: /refresh-configuration.sh *" >> /etc/sudoers
-
-COPY --from=unms-crm /etc/nginx/available-servers /etc/nginx/ucrm
-
-COPY --from=unms-nginx /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /openssl.cnf /ip-whitelist.sh /
-COPY --from=unms-postgres /usr/local/bin/migrate.sh /
-COPY --from=unms-nginx /templates /templates
-COPY --from=unms-nginx /www/public /www/public
-
-RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /ip-whitelist.sh /migrate.sh \
-    && sed -i 's#NEW_BIN_DIR="/usr/local/bin"#NEW_BIN_DIR="/usr/bin"#g' /migrate.sh \
-    && sed -i "s#-c listen_addresses=''#-c listen_addresses='' -p 50432#g" /migrate.sh \
-    && sed -i "s#80#9081#g" /etc/nginx/ucrm/ucrm.conf \
-    && sed -i "s#81#9082#g" /etc/nginx/ucrm/suspended_service.conf \
-    && sed -i '/conf;/a \ \ include /etc/nginx/ucrm/*.conf;' /templates/nginx.conf.template \
-    && grep -lr "location /nms/ " /templates | xargs sed -i "s#location /nms/ #location /nms #g" \
-    && grep -lr "location /crm/ " /templates | xargs sed -i "s#location /crm/ #location /crm #g"
-# end nginx / php #
+    && rm -rf /tmp/src /var/cache/apk/*
+# end php #
 
 # start php plugins / composer #
 ENV PHP_INI_DIR=/usr/local/etc/php \
@@ -279,7 +268,7 @@ COPY --from=rabbitmq /opt/rabbitmq/ /opt/rabbitmq/
 
 WORKDIR /home/app/unms
 
-ENV PATH=/home/app/unms/node_modules/.bin:$PATH:/opt/rabbitmq/sbin \
+ENV PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin:/usr/local/openresty/bin \
     PGDATA=/config/postgres \
     POSTGRES_DB=unms \
     QUIET_MODE=0 \
