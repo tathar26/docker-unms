@@ -157,7 +157,9 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
     && sed -i "s#-c listen_addresses=''#-c listen_addresses='' -p 50432#g" /migrate.sh \
     && sed -i "s#80#9081#g" /usr/local/openresty/nginx/conf/ucrm/ucrm.conf \
     && sed -i "s#81#9082#g" /usr/local/openresty/nginx/conf/ucrm/suspended_service.conf \
-    && sed -i '/conf;/a \ \ include /usr/local/openresty/nginx/conf/ucrm/*.conf;' /usr/local/openresty/nginx/templates/nginx.conf.template
+    && sed -i '/conf;/a \ \ include /usr/local/openresty/nginx/conf/ucrm/*.conf;' /usr/local/openresty/nginx/templates/nginx.conf.template \
+    && grep -lr "location /nms/ " /usr/local/openresty/nginx/templates | xargs sed -i "s#location /nms/ #location /nms #g" \
+    && grep -lr "location /crm/ " /usr/local/openresty/nginx/templates | xargs sed -i "s#location /crm/ #location /crm #g"
 # end openresty #
 
 # start php #
