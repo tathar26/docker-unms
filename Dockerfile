@@ -6,7 +6,7 @@ FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.2 as unms-siridb
 FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.2 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 
-FROM nico640/s6-alpine-node:testing
+FROM nico640/s6-alpine-node:16.13.1-3.13
 
 # base deps postgres 13, certbot
 RUN set -x \
