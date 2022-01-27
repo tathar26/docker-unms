@@ -1,4 +1,4 @@
 #!/usr/bin/with-contenv sh
 
 echo "Starting siridb-server..."
-exec siridb-server
+s6-setuidgid unms siridb-server

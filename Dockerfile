@@ -77,8 +77,8 @@ RUN mkdir -p /usr/src/ucrm \
     && mkdir -p /tmp/supervisor.d \
     && mkdir -p /tmp/supervisord
 
-COPY --from=unms-crm /usr/src/ucrm /usr/src/ucrm
-COPY --from=unms-crm /data /data
+COPY --from=unms-crm --chown=911:911 /usr/src/ucrm /usr/src/ucrm
+COPY --from=unms-crm --chown=911:911 /data /data
 COPY --from=unms-crm /usr/local/bin/crm* /usr/local/bin/
 COPY --from=unms-crm /usr/local/bin/docker* /usr/local/bin/
 COPY --from=unms-crm /tmp/crontabs/server /tmp/crontabs/server
