@@ -6,5 +6,5 @@ chown -R unms:unms /run/postgresql
 if [ -e /config/postgres/postgresql.conf ]; then
   echo "Database already configured"
 else
-  s6-setuidgid unms initdb --locale=C.UTF-8 -U postgres
+  s6-setuidgid unms initdb --locale=C.UTF-8 -U postgres -D /config/postgres
 fi

@@ -1,6 +1,7 @@
 #!/usr/bin/with-contenv sh
 
 export HOME=/var/lib/rabbitmq
+export PATH=$PATH:/opt/rabbitmq/sbin
 
 echo "Starting rabbitmq-server..."
-exec rabbitmq-server
+exec /opt/rabbitmq/sbin/rabbitmq-server

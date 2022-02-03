@@ -14,9 +14,10 @@ export UNMS_NETFLOW_PORT=2055
 export UNMS_NGINX_HOST=127.0.0.1
 export UNMS_NGINX_PORT=12345
 export NODE_ENV=production
+export PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin
 
 echo "Waiting for rabbitmq to start..."
-rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$(hostname).pid
+/opt/rabbitmq/sbin/rabbitmqctl wait /var/lib/rabbitmq/mnesia/rabbit@$(hostname).pid
 
 # wait for postgres to come up
 until pg_isready; do
@@ -28,8 +29,8 @@ echo "Starting unms-netflow..."
 
 if [ "$QUIET_MODE" = "1" ]; then
   echo "Starting Netflow in quiet mode..."
-  s6-setuidgid unms node /home/app/netflow/index.js >> /config/unms/logs/unms.log 2>&1
+  s6-setuidgid unms /home/app/netflow/node-old /home/app/netflow/index.js >> /config/unms/logs/unms.log 2>&1
 
 else
-  s6-setuidgid unms node /home/app/netflow/index.js 2>&1 | tee -a /config/unms/logs/unms.log
+  s6-setuidgid unms /home/app/netflow/node-old /home/app/netflow/index.js 2>&1 | tee -a /config/unms/logs/unms.log
 fi

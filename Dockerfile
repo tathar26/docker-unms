@@ -5,6 +5,7 @@ FROM --platform=linux/amd64 ubnt/unms-crm:3.4.2 as unms-crm
 FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.2 as unms-siridb
 FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.2 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
+FROM node:12.18.4-alpine3.12 as node-old
 
 FROM nico640/s6-alpine-node:16.13.1-3.13
 
@@ -59,6 +60,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 WORKDIR /home/app/netflow
 
 COPY --from=unms-netflow /home/app /home/app/netflow
+COPY --from=node-old /usr/local/bin/node /home/app/netflow/node-old
 
 RUN rm -rf node_modules \
     && apk add --no-cache --virtual .build-deps python3 g++ \
@@ -271,13 +273,9 @@ COPY --from=rabbitmq /opt/rabbitmq/ /opt/rabbitmq/
 WORKDIR /home/app/unms
 
 ENV PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin:/usr/local/openresty/bin \
-    PGDATA=/config/postgres \
-    POSTGRES_DB=unms \
     QUIET_MODE=0 \
-    WS_PORT=443 \
     PUBLIC_HTTPS_PORT=443 \
-    PUBLIC_WS_PORT=443 \
-    UNMS_NETFLOW_PORT=2055
+    PUBLIC_WS_PORT=443
 
 EXPOSE 80 443 2055/udp
 
