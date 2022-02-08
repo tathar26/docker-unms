@@ -1,6 +1,7 @@
 #!/usr/bin/with-contenv sh
 
 chown -R unms:unms /home/app/unms/public/firmwares
+chown -R unms:unms /home/app/unms/public/site-images
 chown -R unms:unms /usr/src/ucrm/web
 chown -R unms:unms /usr/src/ucrm/app/cache
 chown -R unms:unms /config

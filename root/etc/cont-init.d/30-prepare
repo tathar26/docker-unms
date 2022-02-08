@@ -23,6 +23,11 @@ ln -s /config/unms/ucrm /data
 mkdir -p /home/app/unms/public/firmwares /www
 ln -s /home/app/unms/public/firmwares /www/firmwares
 
+# Nginx Images
+[ -e /config/unms/images ] || mv /home/app/unms/public/site-images /config/unms/images
+[ -d /home/app/unms/public/site-images ] && rm -rf /home/app/unms/public/site-images
+ln -s /config/unms/images /home/app/unms/public/site-images
+
 # Certs
 [ -e /config/cert ] || mkdir -p /config/cert
 [ -e /config/usercert ] || mkdir -p /config/usercert
