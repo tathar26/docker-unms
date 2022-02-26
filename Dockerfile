@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:1.4.2 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.2 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.2 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.4.2 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.2 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.2 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:1.4.3 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.3 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.3 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.4.3 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.3 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.3 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
@@ -247,8 +247,8 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
 # start siridb #
 COPY --from=unms-siridb /etc/siridb/siridb.conf /etc/siridb/siridb.conf
 
-ENV LIBCLERI_VERSION=0.12.1 \
-    SIRIDB_VERSION=2.0.44
+ENV LIBCLERI_VERSION=0.12.2 \
+    SIRIDB_VERSION=2.0.45
 
 RUN set -x \
     && apk add --no-cache --virtual .build-deps gcc make libuv-dev musl-dev pcre2-dev yajl-dev util-linux-dev \
