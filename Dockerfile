@@ -30,7 +30,7 @@ WORKDIR /home/app/unms
 # copy unms app from offical image since the source code is not published at this time
 COPY --from=unms /home/app/unms /home/app/unms
 
-ENV LIBVIPS_VERSION=8.11.3
+ENV LIBVIPS_VERSION=8.12.2
 
 RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && ln -s /usr/bin/python3 /usr/bin/python \
