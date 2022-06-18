@@ -2,13 +2,13 @@
 
 #SiriDB
 [ ! -e /config/siridb ] && [ -d /var/lib/siridb ] && mv /var/lib/siridb /config/siridb
-[ -e /config/siridb ] || mkdir /config/siridb
+[ -e /config/siridb ] || mkdir -p /config/siridb
 [ -d /var/lib/siridb ] && rm -rf /var/lib/siridb
 ln -s /config/siridb /var/lib/siridb
 
 # UNMS
 [ ! -e /config/unms ] && [ -d /home/app/unms/data ] && mv /home/app/unms/data /config/unms
-[ -e /config/unms ] || mkdir /config/unms
+[ -e /config/unms ] || mkdir -p /config/unms
 [ -d /home/app/unms/data ] && rm -rf /home/app/unms/data
 [ -f /sharedenv ] || (echo "export UNMS_TOKEN=$(LC_CTYPE=C tr -dc "a-zA-Z0-9" < /dev/urandom | fold -w 48 | head -n 1 || true)" > /sharedenv \
 && echo "export SECRET=$(LC_CTYPE=C tr -dc "a-zA-Z0-9" < /dev/urandom | fold -w 48 | head -n 1 || true)" >> /sharedenv \
@@ -18,7 +18,7 @@ ln -s /config/unms /home/app/unms/data
 
 # UCRM
 [ ! -e /config/unms/ucrm ] && [ -d /data ] && mv /data /config/unms/ucrm
-[ -e /config/unms/ucrm ] || mkdir /config/unms/ucrm
+[ -e /config/unms/ucrm ] || mkdir -p /config/unms/ucrm
 [ -d /data ] && rm -rf /data
 ln -s /config/unms/ucrm /data
 
@@ -28,7 +28,7 @@ ln -s /home/app/unms/public/firmwares /www/firmwares
 
 # Nginx Images
 [ ! -e /config/unms/images ] && [ -d /home/app/unms/public/site-images ] && mv /home/app/unms/public/site-images /config/unms/images
-[ -e /config/unms/images ] || mkdir /config/unms/images
+[ -e /config/unms/images ] || mkdir -p /config/unms/images
 [ -d /home/app/unms/public/site-images ] && rm -rf /home/app/unms/public/site-images
 ln -s /config/unms/images /home/app/unms/public/site-images
 
