@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv sh
+#!/command/with-contenv sh
 
 #SiriDB
 [ ! -e /config/siridb ] && [ -d /var/lib/siridb ] && mv /var/lib/siridb /config/siridb

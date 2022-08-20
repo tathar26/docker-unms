@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv sh
+#!/command/with-contenv sh
 
 chown -R unms:unms /home/app/unms/public/firmwares
 chown -R unms:unms /home/app/unms/public/site-images

@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv sh
+#!/command/with-contenv sh
 
 export TERM=xterm
 export POSTGRES_USER=ucrm
