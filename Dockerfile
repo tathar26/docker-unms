@@ -14,8 +14,8 @@ RUN set -x \
     && apk upgrade --no-cache \
     && apk add --no-cache certbot gzip bash vim dumb-init openssl libcap sudo \
        pcre pcre2 yajl gettext coreutils make argon2-libs erlang jq vips tar xz \
-       libzip gmp icu c-client supervisor libuv su-exec postgresql postgresql-client \
-       postgresql-contrib
+       libzip gmp icu c-client supervisor libuv su-exec postgresql13 postgresql13-client \
+       postgresql13-contrib
 
 # temporarily include postgres 9.6 because it is needed for migration from older versions
 WORKDIR /postgres/9.6
