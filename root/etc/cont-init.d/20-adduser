@@ -3,8 +3,12 @@
 PUID=${PUID:-911}
 PGID=${PGID:-911}
 
-addgroup -g "$PGID" unms
-adduser -D -u "$PUID" -G unms unms
+EXISTGID=$(getent group $PGID | cut -d: -f1)
+EXISTUID=$(getent passwd $PUID | cut -d: -f1)
+
+[ -z "$EXISTGID" ] && addgroup -g "$PGID" unms || groupmod -n unms $EXISTGID
+[ -z "$EXISTUID" ] && adduser -D -u "$PUID" -G unms unms || usermod -l unms -aG unms $EXISTUID
+
 
 echo "
 -------------------------------------
