@@ -23,7 +23,9 @@ ln -s /config/unms /home/app/unms/data
 ln -s /config/unms/ucrm /data
 
 # Nginx Firmware
-mkdir -p /home/app/unms/public/firmwares /www
+[ -e /home/app/unms/public/firmwares ] || mkdir -p /home/app/unms/public/firmwares
+[ -e /www ] || mkdir -p /www
+[ -d /www/firmwares ] && rm -rf /www/firmwares
 ln -s /home/app/unms/public/firmwares /www/firmwares
 
 # Nginx Images
@@ -35,6 +37,8 @@ ln -s /config/unms/images /home/app/unms/public/site-images
 # Certs
 [ -e /config/cert ] || mkdir -p /config/cert
 [ -e /config/usercert ] || mkdir -p /config/usercert
+[ -d /cert ] && rm -rf /cert
+[ -d /usercert ] && rm -rf /usercert
 ln -s /config/cert /cert
 ln -s /config/usercert /usercert
 
