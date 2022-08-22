@@ -270,6 +270,9 @@ COPY --from=rabbitmq /etc/rabbitmq/ /etc/rabbitmq/
 COPY --from=rabbitmq /opt/rabbitmq/ /opt/rabbitmq/
 # end rabbitmq #
 
+# temp fix until s6 services have been migrated to s6-rc
+RUN sed -i '/sh -e/a \\export S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0' /init
+
 WORKDIR /home/app/unms
 
 ENV PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin:/usr/local/openresty/bin \
