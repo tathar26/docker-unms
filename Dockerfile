@@ -278,7 +278,9 @@ WORKDIR /home/app/unms
 ENV PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin:/usr/local/openresty/bin \
     QUIET_MODE=0 \
     PUBLIC_HTTPS_PORT=443 \
-    PUBLIC_WS_PORT=443
+    PUBLIC_WS_PORT=443 \
+    HTTP_PORT=80 \
+    HTTPS_PORT=443
 
 EXPOSE 80 443 2055/udp
 
