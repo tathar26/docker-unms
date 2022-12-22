@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:1.4.8 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.4.8 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.4.8 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.4.8 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.4.8 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.4.8 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:1.5.7 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:1.5.7 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:1.5.7 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:3.5.0 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:1.5.7 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:1.5.7 as unms-postgres
 FROM rabbitmq:3.7.14-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
@@ -102,7 +102,7 @@ RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
 # end unms-crm #
 
 # start openresty #
-ENV OPEN_RESTY_VERSION=openresty-1.19.9.1
+ENV OPEN_RESTY_VERSION=openresty-1.21.4.1
 
 WORKDIR /tmp/src
 
