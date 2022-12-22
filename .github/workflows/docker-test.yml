@@ -2,7 +2,10 @@ name: Docker CI Test
 
 on:
   push:
-    branches: [ testing ]
+    branches:
+      - testing
+    paths-ignore:
+      - '**/README.md'
 
 jobs:
   build:
