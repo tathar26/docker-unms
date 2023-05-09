@@ -1,0 +1,20 @@
+#!/bin/sh
+
+PUID=${PUID:-911}
+PGID=${PGID:-911}
+
+EXISTGID=$(getent group $PGID | cut -d: -f1)
+EXISTUID=$(getent passwd $PUID | cut -d: -f1)
+
+[ -z "$EXISTGID" ] && addgroup -g "$PGID" unms || groupmod -n unms $EXISTGID
+[ -z "$EXISTUID" ] && adduser -D -u "$PUID" -G unms unms || usermod -l unms -aG unms $EXISTUID
+
+
+echo "
+-------------------------------------
+GID/UID
+-------------------------------------
+User uid:    $(id -u unms)
+User gid:    $(id -g unms)
+-------------------------------------
+"

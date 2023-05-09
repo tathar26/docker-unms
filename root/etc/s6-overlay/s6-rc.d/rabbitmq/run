@@ -1,0 +1,7 @@
+#!/command/with-contenv sh
+
+export HOME=/var/lib/rabbitmq
+export PATH=$PATH:/opt/rabbitmq/sbin
+
+echo "Starting rabbitmq-server..."
+s6-setuidgid unms rabbitmq-server

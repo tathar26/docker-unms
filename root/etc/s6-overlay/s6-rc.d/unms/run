@@ -1,0 +1,89 @@
+#!/command/with-contenv sh
+
+export HOME=/home/app
+export HTTP_PORT=8081
+export WS_PORT=8082
+export WS_SHELL_PORT=8083
+export UNMS_RABBITMQ_HOST=127.0.0.1
+export UNMS_RABBITMQ_PORT=5672
+export UNMS_SIRIDB_HOST=127.0.0.1
+export UNMS_SIRIDB_PORT=9000
+export UNMS_PG_HOST=127.0.0.1
+export UNMS_PG_PORT=5432
+export UNMS_PG_USER=unms
+export UNMS_PG_PASSWORD=unms
+export UNMS_PG_SCHEMA=unms
+export UNMS_PG_DB=unms
+export UNMS_FLUENTD_HOST=127.0.0.1
+export UNMS_FLUENTD_PORT=8081
+export UNMS_NGINX_HOST=127.0.0.1
+export UNMS_NGINX_PORT=12345
+export UNMS_NETFLOW_PORT=2055
+export UCRM_HOST=127.0.0.1
+export UCRM_PORT=9081
+export UCRM_PG_USER=ucrm
+export UCRM_PG_SCHEMA=ucrm
+export UCRM_PG_PASSWORD=ucrm
+export NODE_ENV=production
+export CLUSTER_SIZE=auto
+export USE_LOCAL_DISCOVERY=true
+export PATH=$PATH:/home/app/unms/node_modules/.bin
+. /sharedenv
+
+# wait for postgres to come up
+until pg_isready; do
+  echo "Waiting for postgres to come up..."
+  sleep 3
+done
+
+# Create postgres database if it does not exist
+psql -U postgres -lqt | cut -d \| -f 1 | grep -qw $UNMS_PG_DB
+if [ $? -ne 0 ]; then
+  echo "Creating database..."
+  createdb -U postgres -O postgres $UNMS_PG_DB
+fi
+
+# Migrate database
+psql -U postgres -d $UNMS_PG_DB -qt -c "SELECT schema_name FROM information_schema.schemata" | cut -d \| -f 1 | grep -qw $UNMS_PG_SCHEMA
+if [ $? -ne 0 ]; then
+  echo "Migrating database..."
+  # Create user unms
+  psql -U postgres -d $UNMS_PG_DB -c "CREATE USER $UNMS_PG_USER SUPERUSER PASSWORD '$UNMS_PG_PASSWORD'"
+  psql -U postgres -d $UNMS_PG_DB -c "GRANT ALL PRIVILEGES ON DATABASE $UNMS_PG_DB TO $UNMS_PG_USER"
+  # Create user ucrm
+  psql -U postgres -d $UNMS_PG_DB -c "CREATE USER $UCRM_PG_USER SUPERUSER PASSWORD '$UCRM_PG_PASSWORD'"
+  psql -U postgres -d $UNMS_PG_DB -c "GRANT ALL PRIVILEGES ON DATABASE $UNMS_PG_DB TO $UCRM_PG_USER"
+  # Rename schema public to unms
+  psql -U postgres -d $UNMS_PG_DB -c "ALTER SCHEMA public RENAME TO $UNMS_PG_SCHEMA"
+  # Create new schemas
+  psql -U postgres -d $UNMS_PG_DB -c "CREATE SCHEMA IF NOT EXISTS public"
+  psql -U postgres -d $UNMS_PG_DB -c "CREATE SCHEMA IF NOT EXISTS $UCRM_PG_SCHEMA"
+  # Change search paths
+  psql -U postgres -d $UNMS_PG_DB -c "ALTER USER $UNMS_PG_USER SET search_path = $UNMS_PG_SCHEMA,public"
+  psql -U postgres -d $UNMS_PG_DB -c "ALTER USER $UCRM_PG_USER SET search_path = $UCRM_PG_SCHEMA,public"
+  # Change schema owners
+  psql -U postgres -d $UNMS_PG_DB -c "ALTER SCHEMA $UNMS_PG_SCHEMA OWNER TO $UNMS_PG_USER"
+  psql -U postgres -d $UNMS_PG_DB -c "ALTER SCHEMA $UCRM_PG_SCHEMA OWNER TO $UCRM_PG_USER"
+fi
+
+# Migrate extensions
+psql -U postgres -d $UNMS_PG_DB -qt -c "\df" | cut -d \| -f 2 | grep -qw "uuid_generate_v4"
+if [ $? -ne 0 ]; then
+  echo "Migrating extensions..."
+  extensions="$(psql -U postgres -d $UNMS_PG_DB -qt -c "SELECT extname FROM pg_extension WHERE extname != 'plpgsql'")"
+  for extension in ${extensions}; do
+    psql -U postgres -d $UNMS_PG_DB -c "ALTER EXTENSION \"${extension}\" SET SCHEMA public"
+  done
+fi
+
+if [ "$QUIET_MODE" = "1" ]; then
+  echo "Starting UNMS in quiet mode..."
+  cd /home/app/unms
+  s6-setuidgid unms docker-entrypoint.sh /home/app/unms/index.js >> /config/unms/logs/unms.log 2>&1
+
+  printf "\n\nUNMS exited, last 100 lines of log:\n\n"
+  tail -n 100 /config/unms/logs/unms.log
+else
+  cd /home/app/unms
+  s6-setuidgid unms docker-entrypoint.sh /home/app/unms/index.js 2>&1  | tee -a /config/unms/logs/unms.log
+fi

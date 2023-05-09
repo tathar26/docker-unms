@@ -1,0 +1,13 @@
+#!/bin/sh
+
+mkdir -p /run/postgresql
+chown -R unms:unms /run/postgresql
+
+if [ -e /config/postgres/postgresql.conf ]; then
+  echo "Database already configured"
+else
+  mkdir -p /config/postgres
+  chown unms:unms /config/postgres
+  chmod 700 /config/postgres
+  s6-setuidgid unms initdb --locale=C.UTF-8 -U postgres -D /config/postgres
+fi

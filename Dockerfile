@@ -1,21 +1,22 @@
-FROM --platform=linux/amd64 ubnt/unms:1.7.5 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:1.7.5 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:1.7.5 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:3.7.0 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:1.7.5 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:1.7.5 as unms-postgres
-FROM rabbitmq:3.7.14-alpine as rabbitmq
+FROM --platform=linux/amd64 ubnt/unms:2.2.12 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:2.2.12 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:2.2.12 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:4.2.0 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:2.2.12 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:2.2.12 as unms-postgres
+FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
 FROM nico640/s6-alpine-node:16.13.1-3.15
+ARG TARGETARCH
 
 # base deps postgres 13, certbot
 RUN set -x \
     && apk upgrade --no-cache \
     && apk add --no-cache certbot gzip bash vim dumb-init openssl libcap sudo \
-       pcre pcre2 yajl gettext coreutils make argon2-libs erlang jq vips tar xz \
+       pcre pcre2 yajl gettext coreutils make argon2-libs jq vips tar xz \
        libzip gmp icu c-client supervisor libuv su-exec postgresql13 postgresql13-client \
-       postgresql13-contrib
+       postgresql13-contrib gnu-libiconv
 
 # temporarily include postgres 9.6 because it is needed for migration from older versions
 WORKDIR /postgres/9.6
@@ -42,7 +43,10 @@ RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && cd /home/app/unms \
     && mv node_modules/@ubnt/* tmp/ \
     && sed -i 's#"@ubnt/images": ".*"#"@ubnt/images": "file:../images"#g' tmp/ui-components/package.json \
+    && sed -i 's#"@ubnt/icons": ".*"#"@ubnt/icons": "file:../icons"#g' tmp/ui-components/package.json \
+    && sed -i 's#"@ubnt/icons-5": ".*"#"@ubnt/icons-5": "file:../icons-5"#g' tmp/ui-components/package.json \
     && sed -i 's#"@ubnt/icons": ".*"#"@ubnt/icons": "file:../icons"#g' tmp/link-core/package.json \
+    && sed -i 's#"@ubnt/icons-5": ".*"#"@ubnt/icons-5": "file:../icons-5"#g' tmp/link-core/package.json \
     && sed -i 's#"@ubnt/ui-components": ".*"#"@ubnt/ui-components": "file:../ui-components"#g' tmp/link-core/package.json \
     && sed -i 's#"@ubnt/link-core": ".*"#"@ubnt/link-core": "file:./tmp/link-core"#g' package.json \
     && rm -rf node_modules \
@@ -106,12 +110,12 @@ ENV OPEN_RESTY_VERSION=openresty-1.21.4.1
 
 WORKDIR /tmp/src
 
-RUN apk add --no-cache --virtual .build-deps gcc g++ pcre-dev openssl-dev zlib-dev perl \
-    && export CC="gcc -fdiagnostics-color=always -g3" \
+RUN apk add --no-cache --virtual .build-deps gcc g++ pcre-dev openssl-dev zlib-dev perl ccache \
+    && export CC="ccache gcc -fdiagnostics-color=always -g3" \
     && curl -SL https://openresty.org/download/${OPEN_RESTY_VERSION}.tar.gz | tar xvz \
     && cd /tmp/src/${OPEN_RESTY_VERSION} && ./configure \
         --prefix="/usr/local/openresty" \
-        --with-cc='gcc -fdiagnostics-color=always -g3' \
+        --with-cc='ccache gcc -fdiagnostics-color=always -g3' \
         --with-cc-opt="-DNGX_LUA_ABORT_AT_PANIC" \
         --with-pcre-jit \
         --without-http_rds_json_module \
@@ -165,12 +169,12 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
 # end openresty #
 
 # start php #
-ENV PHP_VERSION=php-7.4.26
+ENV PHP_VERSION=php-8.1.13
 
 WORKDIR /tmp/src
 
 RUN set -x \
-    && apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c \
+    && apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc libc-dev make pkgconf re2c gnu-libiconv-dev \
        argon2-dev coreutils curl-dev libsodium-dev libxml2-dev linux-headers oniguruma-dev openssl-dev readline-dev sqlite-dev \
     && curl -SL https://www.php.net/get/${PHP_VERSION}.tar.xz/from/this/mirror -o php.tar.xz \
     && tar -xvf php.tar.xz \
@@ -192,14 +196,17 @@ RUN set -x \
         --with-pdo-sqlite=/usr \
         --with-sqlite3=/usr \ 
         --with-curl \
+        --with-iconv=/usr \
         --with-openssl \
         --with-readline \
         --with-zlib \
+        --disable-phpdbg \
         --with-pear \
-        --enable-fpm \
         --disable-cgi \
+        --enable-fpm \
         --with-fpm-user=www-data \
         --with-fpm-group=www-data \
+        $([ $TARGETARCH = "arm" ] && echo "--host=arm-unknown-linux-musleabihf --disable-opcache-jit") \
     && make -j $(nproc) \
     && make install \
     && apk del .build-deps \
@@ -268,6 +275,8 @@ RUN set -x \
 COPY --from=rabbitmq /var/lib/rabbitmq/ /var/lib/rabbitmq/
 COPY --from=rabbitmq /etc/rabbitmq/ /etc/rabbitmq/
 COPY --from=rabbitmq /opt/rabbitmq/ /opt/rabbitmq/
+COPY --from=rabbitmq /usr/local/lib/erlang/ /usr/local/lib/erlang/
+COPY --from=rabbitmq /usr/local/bin/ct_run /usr/local/bin/dialyzer /usr/local/bin/e* /usr/local/bin/run_erl /usr/local/bin/t* /usr/local/bin/
 # end rabbitmq #
 
 # temp fix until s6 services have been migrated to s6-rc
