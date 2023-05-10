@@ -42,7 +42,7 @@ export CLOUD_SMTP_USERNAME=null
 export CLOUD_SMTP_PASSWORD=null
 export CLOUD_SMTP_HOSTNAME=null
 export CLOUD_SMTP_TLS_ALLOW_UNAUTHORIZED=null
-export CLOUD_SMTP_SECURITY_MODE=nulls
+export CLOUD_SMTP_SECURITY_MODE=null
 export CLOUD_MAPS_API_KEY=null
 export NODE_ENV=production
 . /sharedenv
