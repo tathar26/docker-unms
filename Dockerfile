@@ -1,13 +1,13 @@
-FROM --platform=linux/amd64 ubnt/unms:2.2.15 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:2.2.15 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:2.2.15 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:4.2.2 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:2.2.15 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:2.2.15 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:2.3.35 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:2.3.35 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:2.3.35 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:4.3.2 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:2.3.35 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:2.3.35 as unms-postgres
 FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
-FROM nico640/s6-alpine-node:16.13.1-3.15
+FROM nico640/s6-alpine-node:testing
 ARG TARGETARCH
 
 # base deps postgres 13, certbot
@@ -169,7 +169,7 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
 # end openresty #
 
 # start php #
-ENV PHP_VERSION=php-8.1.13
+ENV PHP_VERSION=php-8.1.21
 
 WORKDIR /tmp/src
 
