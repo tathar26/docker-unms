@@ -16,7 +16,7 @@ RUN set -x \
     && apk add --no-cache certbot gzip bash vim dumb-init openssl libcap sudo \
        pcre pcre2 yajl gettext coreutils make argon2-libs jq vips tar xz \
        libzip gmp icu c-client supervisor libuv su-exec postgresql13 postgresql13-client \
-       postgresql13-contrib gnu-libiconv
+       postgresql13-contrib gnu-libiconv git
 
 # temporarily include postgres 9.6 because it is needed for migration from older versions
 WORKDIR /postgres/9.6
