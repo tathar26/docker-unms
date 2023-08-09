@@ -34,7 +34,6 @@ COPY --from=unms /home/app/unms /home/app/unms
 ENV LIBVIPS_VERSION=8.12.2
 
 RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
-    && ln -s /usr/bin/python3 /usr/bin/python \
     && mkdir -p /tmp/src /home/app/unms/tmp && cd /tmp/src \
     && wget -q https://github.com/libvips/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz -O libvips.tar.gz \
     && tar -zxvf libvips.tar.gz \
