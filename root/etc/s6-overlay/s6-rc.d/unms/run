@@ -28,6 +28,7 @@ export NODE_ENV=production
 export CLUSTER_SIZE=auto
 export USE_LOCAL_DISCOVERY=true
 export PATH=$PATH:/home/app/unms/node_modules/.bin
+export UISP_PATH=/home/app/unms
 . /sharedenv
 
 # wait for postgres to come up
