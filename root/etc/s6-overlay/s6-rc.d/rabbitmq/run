@@ -3,5 +3,8 @@
 export HOME=/var/lib/rabbitmq
 export PATH=$PATH:/opt/rabbitmq/sbin
 
+# Limit max open file descriptors or else RabbitMQ wont't start (#96)
+[ $(ulimit -n) -gt 65536 ] && ulimit -n 65536
+
 echo "Starting rabbitmq-server..."
 s6-setuidgid unms rabbitmq-server
