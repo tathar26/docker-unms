@@ -246,13 +246,13 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
 # start siridb #
 COPY --from=unms-siridb /etc/siridb/siridb.conf /etc/siridb/siridb.conf
 
-ENV LIBCLERI_VERSION=v1.0.2 \
+ENV LIBCLERI_VERSION=1.0.2 \
     SIRIDB_VERSION=2.0.51
 
 RUN set -x \
     && apk add --no-cache --virtual .build-deps gcc make libuv-dev musl-dev pcre2-dev yajl-dev util-linux-dev \
     && mkdir -p /tmp/src && cd /tmp/src \
-    && curl -SL https://github.com/cesbit/libcleri/archive/${LIBCLERI_VERSION}.tar.gz | tar xvz \
+    && curl -SL https://github.com/cesbit/libcleri/archive/v${LIBCLERI_VERSION}.tar.gz | tar xvz \
     && curl -SL https://github.com/siridb/siridb-server/archive/${SIRIDB_VERSION}.tar.gz | tar xvz \
     && cd /tmp/src/libcleri-${LIBCLERI_VERSION}/Release \
     && make all -j $(nproc) && make install \
