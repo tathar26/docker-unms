@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:2.3.57 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:2.3.57 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:2.3.57 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:4.3.6 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:2.3.57 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:2.3.57 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:2.4.93 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:2.4.93 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:2.4.93 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:4.4.13 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:2.4.93 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.93 as unms-postgres
 FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
@@ -17,13 +17,6 @@ RUN set -x \
        pcre pcre2 yajl gettext coreutils make argon2-libs jq vips tar xz \
        libzip gmp icu c-client supervisor libuv su-exec postgresql13 postgresql13-client \
        postgresql13-contrib gnu-libiconv git
-
-# temporarily include postgres 9.6 because it is needed for migration from older versions
-WORKDIR /postgres/9.6
-RUN cp /etc/apk/repositories /etc/apk/repositories_temp \
-    && echo "https://dl-cdn.alpinelinux.org/alpine/v3.6/main" > /etc/apk/repositories \
-    && apk fetch --root / --arch ${APK_ARCH} --no-cache -U postgresql postgresql-contrib libressl2.5-libcrypto libressl2.5-libssl -o /postgres \
-    && mv /etc/apk/repositories_temp /etc/apk/repositories
 
 # start unms #
 WORKDIR /home/app/unms
@@ -105,7 +98,7 @@ RUN grep -lr "nginx:nginx" /usr/src/ucrm/ | xargs sed -i 's/nginx:nginx/unms:unm
 # end unms-crm #
 
 # start openresty #
-ENV OPEN_RESTY_VERSION=openresty-1.21.4.1
+ENV OPEN_RESTY_VERSION=openresty-1.21.4.2
 
 WORKDIR /tmp/src
 
@@ -168,7 +161,7 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
 # end openresty #
 
 # start php #
-ENV PHP_VERSION=php-8.1.24
+ENV PHP_VERSION=php-8.1.26
 
 WORKDIR /tmp/src
 
@@ -253,8 +246,8 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
 # start siridb #
 COPY --from=unms-siridb /etc/siridb/siridb.conf /etc/siridb/siridb.conf
 
-ENV LIBCLERI_VERSION=0.12.2 \
-    SIRIDB_VERSION=2.0.45
+ENV LIBCLERI_VERSION=1.0.2 \
+    SIRIDB_VERSION=2.0.51
 
 RUN set -x \
     && apk add --no-cache --virtual .build-deps gcc make libuv-dev musl-dev pcre2-dev yajl-dev util-linux-dev \
