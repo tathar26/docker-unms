@@ -41,6 +41,7 @@ RUN apk add --no-cache --virtual .build-deps python3 g++ vips-dev glib-dev \
     && sed -i 's#"@ubnt/icons-5": ".*"#"@ubnt/icons-5": "file:../icons-5"#g' tmp/link-core/package.json \
     && sed -i 's#"@ubnt/ui-components": ".*"#"@ubnt/ui-components": "file:../ui-components"#g' tmp/link-core/package.json \
     && sed -i 's#"@ubnt/link-core": ".*"#"@ubnt/link-core": "file:./tmp/link-core"#g' package.json \
+    && sed -i '$i,"resolutions": { "cheerio": "1.0.0-rc.5" }' package.json \
     && rm -rf node_modules \
     && CHILD_CONCURRENCY=1 yarn install --production --no-cache --ignore-engines --network-timeout 100000 \
     && yarn cache clean \
