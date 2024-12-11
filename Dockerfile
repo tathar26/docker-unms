@@ -7,7 +7,7 @@ FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.155 as unms-postgres
 FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
-FROM nico640/s6-alpine-node:16.20.0-3.17-1
+FROM nico640/s6-alpine-node:16.20.0-3.17-2
 ARG TARGETARCH
 
 # base deps postgres 13, certbot
