@@ -272,9 +272,6 @@ COPY --from=rabbitmq /usr/local/lib/erlang/ /usr/local/lib/erlang/
 COPY --from=rabbitmq /usr/local/bin/ct_run /usr/local/bin/dialyzer /usr/local/bin/e* /usr/local/bin/run_erl /usr/local/bin/t* /usr/local/bin/
 # end rabbitmq #
 
-# temp fix until s6 services have been migrated to s6-rc
-RUN sed -i '/sh -e/a \\export S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0' /init
-
 WORKDIR /home/app/unms
 
 ENV PATH=$PATH:/home/app/unms/node_modules/.bin:/opt/rabbitmq/sbin:/usr/local/openresty/bin \
