@@ -16,7 +16,7 @@ RUN set -x \
     && apk add --no-cache certbot gzip bash vim dumb-init openssl libcap sudo \
        pcre pcre2 yajl gettext coreutils make argon2-libs jq vips tar xz \
        libzip gmp icu c-client supervisor libuv su-exec postgresql13 postgresql13-client \
-       postgresql13-contrib gnu-libiconv git
+       postgresql13-contrib gnu-libiconv git libsodium
 
 # start unms #
 WORKDIR /home/app/unms
