@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:2.4.155 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:2.4.155 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:2.4.155 as unms-netflow
-FROM --platform=linux/amd64 ubnt/unms-crm:4.4.21 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:2.4.155 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.155 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms:2.4.175 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:2.4.175 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:2.4.175 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms-crm:4.4.30 as unms-crm
+FROM --platform=linux/amd64 ubnt/unms-siridb:2.4.175 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.175 as unms-postgres
 FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
@@ -162,7 +162,7 @@ RUN chmod +x /entrypoint.sh /refresh-certificate.sh /refresh-configuration.sh /i
 # end openresty #
 
 # start php #
-ENV PHP_VERSION=php-8.1.26
+ENV PHP_VERSION=php-8.1.31
 
 WORKDIR /tmp/src
 
