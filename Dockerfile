@@ -221,7 +221,7 @@ RUN apk add --no-cache --virtual .build-deps autoconf dpkg-dev dpkg file g++ gcc
     && cd /usr/src/php \
     && pecl channel-update pecl.php.net \
     && echo '' | pecl install apcu ds \
-    && docker-php-ext-enable apcu ds \
+    && docker-php-ext-enable apcu ds sodium \
     && docker-php-ext-configure gd \
         --enable-gd \
         --with-freetype=/usr/include/ \
