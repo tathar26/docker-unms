@@ -1,9 +1,9 @@
-FROM --platform=linux/amd64 ubnt/unms:2.4.175 as unms
-FROM --platform=linux/amd64 ubnt/unms-nginx:2.4.175 as unms-nginx
-FROM --platform=linux/amd64 ubnt/unms-netflow:2.4.175 as unms-netflow
+FROM --platform=linux/amd64 ubnt/unms:2.4.188 as unms
+FROM --platform=linux/amd64 ubnt/unms-nginx:2.4.188 as unms-nginx
+FROM --platform=linux/amd64 ubnt/unms-netflow:2.4.188 as unms-netflow
 FROM --platform=linux/amd64 ubnt/unms-crm:4.4.30 as unms-crm
-FROM --platform=linux/amd64 ubnt/unms-siridb:2.4.175 as unms-siridb
-FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.175 as unms-postgres
+FROM --platform=linux/amd64 ubnt/unms-siridb:2.4.188 as unms-siridb
+FROM --platform=linux/amd64 ubnt/unms-postgres:2.4.188 as unms-postgres
 FROM rabbitmq:3.7.28-alpine as rabbitmq
 FROM node:12.18.4-alpine3.12 as node-old
 
